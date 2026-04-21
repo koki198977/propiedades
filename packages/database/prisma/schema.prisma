@@ -1,0 +1,320 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  VIEWER
+}
+
+enum OrganizationRole {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum PropertyCategory {
+  HOUSE
+  APARTMENT
+  OFFICE
+  LAND
+  OTHER
+}
+
+enum UtilityType {
+  ELECTRICITY
+  WATER
+  GAS
+  INTERNET
+  TAX
+  COMMON_EXPENSES
+  INSURANCE
+  OTHER
+}
+
+enum PaymentMethod {
+  CASH
+  TRANSFER
+  DEPOSIT
+  CHECK
+  OTHER
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+}
+
+enum ExpenseFrequency {
+  MONTHLY
+  BIMONTHLY
+  QUARTERLY
+  SEMIANNUAL
+  ANNUAL
+}
+
+// ============================================================
+// MODELS
+// ============================================================
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  fullName     String
+  role         UserRole @default(ADMIN)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  organizations OrganizationMember[]
+  properties    Property[]
+  tenants       Tenant[]
+  payments      Payment[]      @relation("RecordedBy")
+  utilities     Utility[]      @relation("UtilityRecordedBy")
+  conversations AiConversation[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members    OrganizationMember[]
+  properties Property[]
+  tenants    Tenant[]
+
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id             String           @id @default(uuid())
+  organizationId String
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           OrganizationRole @default(ADMIN)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@unique([organizationId, userId])
+  @@map("organization_members")
+}
+
+model Property {
+  id              String           @id @default(uuid())
+  organizationId  String?          // Nullable for migration
+  organization    Organization?    @relation(fields: [organizationId], references: [id])
+  userId          String           // Creator
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category        PropertyCategory
+  address         String
+  rol             String?          // ROL de Avalúo SII (ej: 1234-56)
+  contractEndDate DateTime?
+  paymentDueDay   Int              // 1–31
+  notes           String?
+  customCategory  String?          // Categoría libre cuando type === 'OTHER'
+  expectedRent    Int?
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  photos       PropertyPhoto[]
+  meters       PropertyMeter[]
+  utilities    Utility[]
+  reminders    ExpenseReminder[]
+  tenants      PropertyTenant[]
+
+  @@index([userId])
+  @@index([organizationId])
+  @@map("properties")
+}
+
+model PropertyPhoto {
+  id         String   @id @default(uuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  url        String
+  publicId   String   // Cloudinary public_id para poder eliminar
+  order      Int      @default(0)
+  uploadedAt DateTime @default(now())
+
+  @@index([propertyId])
+  @@map("property_photos")
+}
+
+model PropertyMeter {
+  id         String   @id @default(uuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  label      String   // Ej: "Luz", "Agua", "Gas", "Calefacción"
+  number     String   // Número del medidor
+  createdAt  DateTime @default(now())
+
+  @@index([propertyId])
+  @@map("property_meters")
+}
+
+model Utility {
+  id               String      @id @default(uuid())
+  propertyId       String
+  property         Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  type             UtilityType
+  amount           Decimal     @db.Decimal(12, 2)
+  isIncludedInRent Boolean     @default(true)
+  billingMonth     DateTime?   // Mes al que corresponde (null = recurrente mensual)
+  notes            String?
+  recordedById     String?
+  recordedBy       User?       @relation("UtilityRecordedBy", fields: [recordedById], references: [id])
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@index([propertyId])
+  @@map("utilities")
+}
+
+model ExpenseReminder {
+  id          String           @id @default(uuid())
+  propertyId  String
+  property    Property         @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  title       String
+  amount      Decimal          @db.Decimal(12, 2)
+  frequency   ExpenseFrequency
+  nextDueDate DateTime
+  isActive    Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+
+  @@index([propertyId])
+  @@map("expense_reminders")
+}
+
+model Tenant {
+  id             String   @id @default(uuid())
+  organizationId String?          // Nullable for migration
+  organization   Organization?    @relation(fields: [organizationId], references: [id])
+  userId         String           // Creator
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String
+  email          String?
+  phone          String?
+  documentId     String?  // RUT / DNI
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  properties PropertyTenant[]
+
+  @@index([userId])
+  @@index([organizationId])
+  @@map("tenants")
+}
+
+model PropertyTenant {
+  id          String    @id @default(uuid())
+  propertyId  String
+  property    Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  startDate   DateTime
+  endDate     DateTime? // null = ocupación activa
+  monthlyRent Decimal   @db.Decimal(12, 2)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  payments Payment[]
+
+  @@index([propertyId])
+  @@index([tenantId])
+  @@index([isActive])
+  @@map("property_tenants")
+}
+
+model Payment {
+  id               String         @id @default(uuid())
+  propertyTenantId String
+  propertyTenant   PropertyTenant @relation(fields: [propertyTenantId], references: [id], onDelete: Cascade)
+  recordedById     String
+  recordedBy       User           @relation("RecordedBy", fields: [recordedById], references: [id])
+  amount           Decimal        @db.Decimal(12, 2)
+  paymentDate      DateTime
+  paymentMethod    PaymentMethod
+  receiptUrl       String?        // URL de Cloudinary del comprobante
+  notes            String?
+  createdAt        DateTime       @default(now())
+
+  @@index([propertyTenantId])
+  @@index([paymentDate])
+  @@map("payments")
+}
+
+// ============================================================
+// AI AGENT
+// ============================================================
+
+model AiConversation {
+  id        String       @id @default(uuid())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String?      // Resumen auto-generado de la conversación
+  createdAt DateTime     @default(now())
+
+  messages AiMessage[]
+
+  @@index([userId])
+  @@map("ai_conversations")
+}
+
+model AiMessage {
+  id             String         @id @default(uuid())
+  conversationId String
+  conversation   AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           MessageRole
+  content        String         @db.Text
+  createdAt      DateTime       @default(now())
+
+  @@index([conversationId])
+  @@map("ai_messages")
+}
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+
+enum NotificationType {
+  EXPIRATION
+  PAYMENT_DUE
+  EXPENSE_DUE
+  SYSTEM
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String           @db.Text
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+  @@map("notifications")
+}

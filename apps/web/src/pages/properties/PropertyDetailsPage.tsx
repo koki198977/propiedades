@@ -1,0 +1,1331 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useParams, Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { 
+  PropertyDto, 
+  PropertyCategoryLabels, 
+  PropertyCategory,
+  UtilityDto, 
+  UtilityTypeLabels, 
+  UtilityType, 
+  CreateUtilityDto, 
+  PaymentMethod, 
+  CreatePaymentDto,
+  UpdatePropertyDto,
+  AssignTenantDto,
+  TenantDto,
+  PropertyMeterDto,
+  CreatePropertyMeterDto,
+  ExpenseFrequency,
+  ExpenseFrequencyLabels,
+  ExpenseReminderDto,
+  CreateExpenseReminderDto,
+} from '@propiedades/types';
+import api from '@/api/axios';
+import { useState, useRef, useEffect } from 'react';
+import toast from 'react-hot-toast';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+
+// --- Validation Schemas ---
+const utilitySchema = z.object({
+  type: z.nativeEnum(UtilityType),
+  amount: z.number().min(1, 'Monto inválido'),
+  isIncludedInRent: z.boolean(),
+  billingMonth: z.string().optional(),
+  title: z.string().optional(),
+});
+
+const paymentSchema = z.object({
+  amount: z.number().min(1, 'Monto inválido'),
+  paymentDate: z.string(),
+  paymentMethod: z.nativeEnum(PaymentMethod),
+  notes: z.string().optional(),
+});
+
+// --- Main Component ---
+export default function PropertyDetailsPage() {
+  const { id } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<'detalle' | 'gestion'>(searchParams.get('manage') === 'true' ? 'gestion' : 'detalle');
+  const [isAddingUtility, setIsAddingUtility] = useState(false);
+  const [isEditingProperty, setIsEditingProperty] = useState(false);
+  const [isAssigningTenant, setIsAssigningTenant] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const manage = searchParams.get('manage') === 'true';
+    setActiveTab(manage ? 'gestion' : 'detalle');
+  }, [searchParams]);
+
+  const handleTabChange = (tab: 'detalle' | 'gestion') => {
+    setActiveTab(tab);
+    setSearchParams(prev => {
+      if (tab === 'gestion') prev.set('manage', 'true');
+      else prev.delete('manage');
+      return prev;
+    });
+  };
+
+  // Queries
+  const { data: property, isLoading: isLoadingProp } = useQuery<PropertyDto>({
+    queryKey: ['property', id],
+    queryFn: async () => {
+      const resp = await api.get(`/properties/${id}`);
+      return resp.data;
+    },
+  });
+
+  const { data: utilities, isLoading: isLoadingUtils } = useQuery<UtilityDto[]>({
+    queryKey: ['utilities', id],
+    queryFn: async () => {
+      const resp = await api.get(`/utilities/property/${id}`);
+      return resp.data;
+    },
+  });
+
+  const { data: activeTenancy, isLoading: isLoadingTenancy } = useQuery<any>({
+    queryKey: ['active-tenancy', id],
+    queryFn: async () => {
+      const resp = await api.get(`/properties/${id}/active-tenancy`);
+      return resp.data || null;
+    },
+  });
+
+  const queryClient = useQueryClient();
+
+  const uploadPhotoMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      const resp = await api.post(`/properties/${id}/photos`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return resp.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['property', id] });
+      toast.success('Foto subida con éxito');
+    },
+    onError: () => toast.error('Error al subir la foto'),
+  });
+
+  const deletePhotoMutation = useMutation({
+    mutationFn: async (photoId: string) => {
+      await api.delete(`/properties/${id}/photos/${photoId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['property', id] });
+      toast.success('Foto eliminada');
+    },
+    onError: () => toast.error('Error al eliminar la foto'),
+  });
+
+  const reorderPhotosMutation = useMutation({
+    mutationFn: async (photoOrders: Array<{ id: string, order: number }>) => {
+      await api.patch(`/properties/${id}/photos/order`, { photoOrders });
+    },
+    onMutate: async (newOrder) => {
+      await queryClient.cancelQueries({ queryKey: ['property', id] });
+      const previousProp = queryClient.getQueryData<PropertyDto>(['property', id]);
+      if (previousProp && previousProp.photos) {
+        const orderMap = new Map(newOrder.map(no => [no.id, no.order]));
+        const newPhotos = [...previousProp.photos].map(p => ({
+          ...p,
+          order: orderMap.has(p.id) ? orderMap.get(p.id)! : p.order
+        })).sort((a, b) => a.order - b.order);
+        queryClient.setQueryData(['property', id], { ...previousProp, photos: newPhotos });
+      }
+      return { previousProp };
+    },
+    onError: (_err, _newOrder, context) => {
+      if (context?.previousProp) {
+        queryClient.setQueryData(['property', id], context.previousProp);
+      }
+      toast.error('Error al ordenar las fotos');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['property', id] });
+    }
+  });
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const files = Array.from(e.target.files);
+      toast.success(`Subiendo ${files.length} foto(s)...`, { id: 'uploading' });
+      
+      try {
+        for (const file of files) {
+          await uploadPhotoMutation.mutateAsync(file);
+        }
+      } catch (error) {
+        console.error("Error al subir algunas fotos", error);
+      } finally {
+        toast.dismiss('uploading');
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleMovePhoto = (index: number, direction: 'left' | 'right') => {
+    if (!property?.photos) return;
+    const newPhotos = [...property.photos];
+    const targetIndex = direction === 'left' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newPhotos.length) return;
+
+    // Swap items
+    const temp = newPhotos[index];
+    newPhotos[index] = newPhotos[targetIndex];
+    newPhotos[targetIndex] = temp;
+
+    // Build new order array
+    const photoOrders = newPhotos.map((p, i) => ({ id: p.id, order: i }));
+    reorderPhotosMutation.mutate(photoOrders);
+  };
+
+
+  if (isLoadingProp || isLoadingUtils || isLoadingTenancy) {
+    return (
+      <div className="container" style={{ paddingTop: '4rem', textAlign: 'center' }}>
+        <p className="text-muted">Cargando detalles de la propiedad...</p>
+      </div>
+    );
+  }
+
+  if (!property) {
+    return <div className="container" style={{ paddingTop: '4rem' }}>Propiedad no encontrada.</div>;
+  }
+
+  return (
+    <div className="container animate-fade-in" style={{ padding: '1.5rem 0' }}>
+      <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Link to="/properties" className="text-muted" style={{ textDecoration: 'none', fontSize: '0.875rem' }}>← Volver a propiedades</Link>
+        <div style={{ display: 'flex', gap: '0.5rem', backgroundColor: 'var(--bg-surface)', padding: '0.4rem', borderRadius: '0.75rem', border: '1px solid var(--border)' }}>
+          <button 
+            onClick={() => handleTabChange('detalle')}
+            style={{ 
+              padding: '0.5rem 1.25rem', 
+              borderRadius: '0.5rem', 
+              border: 'none', 
+              fontSize: '0.875rem', 
+              fontWeight: 700,
+              cursor: 'pointer',
+              backgroundColor: activeTab === 'detalle' ? 'white' : 'transparent',
+              color: activeTab === 'detalle' ? 'var(--primary)' : 'var(--text-muted)',
+              boxShadow: activeTab === 'detalle' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
+              transition: 'all 0.2s'
+            }}
+          >
+            📄 Ficha Técnica
+          </button>
+          <button 
+            onClick={() => handleTabChange('gestion')}
+            style={{ 
+              padding: '0.5rem 1.25rem', 
+              borderRadius: '0.5rem', 
+              border: 'none', 
+              fontSize: '0.875rem', 
+              fontWeight: 700,
+              cursor: 'pointer',
+              backgroundColor: activeTab === 'gestion' ? 'white' : 'transparent',
+              color: activeTab === 'gestion' ? 'var(--primary)' : 'var(--text-muted)',
+              boxShadow: activeTab === 'gestion' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
+              transition: 'all 0.2s'
+            }}
+          >
+            🔧 Gestión de Pagos
+          </button>
+        </div>
+      </div>
+
+      {activeTab === 'detalle' ? (
+        <div className="flex flex-col gap-8 max-w-4xl mx-auto">
+          {/* Property Card - Ficha Técnica */}
+          <div className="card">
+            <div className="flex justify-between items-start" style={{ marginBottom: '2rem' }}>
+              <div>
+                <div className="flex gap-2" style={{ marginBottom: '0.5rem' }}>
+                  <span className="badge badge-success">
+                    {property.category === PropertyCategory.OTHER && property.customCategory 
+                      ? property.customCategory 
+                      : PropertyCategoryLabels[property.category]}
+                  </span>
+                  <span 
+                    className={property.activeTenant ? 'badge badge-success' : 'badge'}
+                    style={{ 
+                      backgroundColor: property.activeTenant ? 'rgba(46, 204, 113, 0.1)' : 'transparent',
+                      color: property.activeTenant ? '#2ecc71' : 'var(--text-muted)',
+                      border: property.activeTenant ? '1px solid #2ecc71' : '1px solid var(--border)'
+                    }}
+                  >
+                    {property.activeTenant ? 'ARRENDADA' : 'DISPONIBLE'}
+                  </span>
+                </div>
+                {!isEditingProperty && <h2 className="font-heading" style={{ fontSize: '2.5rem' }}>{property.address}</h2>}
+              </div>
+              <button 
+                onClick={() => setIsEditingProperty(!isEditingProperty)} 
+                className={isEditingProperty ? 'btn btn-outline' : 'btn btn-primary'}
+              >
+                {isEditingProperty ? 'Cancelar' : '✏️ Editar Información'}
+              </button>
+            </div>
+
+            {isEditingProperty ? (
+              <div style={{ padding: '1.5rem', backgroundColor: 'var(--bg-main)', borderRadius: '1rem', border: '1px solid var(--border)' }}>
+                <EditPropertyForm property={property} onDone={() => setIsEditingProperty(false)} />
+              </div>
+            ) : (
+              <>
+                <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
+                  <div>
+                    <h4 style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>Día de Pago</h4>
+                    <p style={{ fontSize: '1.25rem', fontWeight: 600 }}>Día {property.paymentDueDay}</p>
+                  </div>
+                  <div>
+                    <h4 style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>Vencimiento Contrato</h4>
+                    <p style={{ fontSize: '1.25rem', fontWeight: 600 }}>
+                      {property.contractEndDate ? new Date(property.contractEndDate).toLocaleDateString() : 'Indefinido'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* ROL y Otros Datos */}
+                <div className="flex flex-wrap gap-4" style={{ marginBottom: '2rem' }}>
+                  {property.rol && (
+                    <div style={{ padding: '0.75rem 1rem', background: 'var(--bg-surface)', borderRadius: '0.75rem', display: 'flex', gap: '0.75rem', alignItems: 'center', border: '1px solid var(--border-light)' }}>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>ROL SII</span>
+                      <span style={{ fontWeight: 600 }}>{property.rol}</span>
+                    </div>
+                  )}
+                  {property.expectedRent && (
+                    <div style={{ padding: '0.75rem 1rem', background: 'var(--bg-surface)', borderRadius: '0.75rem', display: 'flex', gap: '0.75rem', alignItems: 'center', border: '1px solid var(--border-light)' }}>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Precio Esperado</span>
+                      <span style={{ fontWeight: 600, color: 'var(--primary)' }}>${Number(property.expectedRent).toLocaleString('es-CL')}</span>
+                    </div>
+                  )}
+                </div>
+
+                {property.notes && (
+                  <div style={{ marginTop: '1.5rem', padding: '1.5rem', backgroundColor: 'var(--bg-surface)', borderRadius: '1rem', borderLeft: '4px solid var(--primary)' }}>
+                    <h4 style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--primary)' }}>Notas y Descripción</h4>
+                    <div 
+                      style={{ fontSize: '1rem', lineHeight: 1.6 }} 
+                      className="text-muted rich-text-content"
+                      dangerouslySetInnerHTML={{ __html: property.notes }}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col lg:grid" style={{ gridTemplateColumns: window.innerWidth < 1024 ? '1fr' : '2fr 1fr', gap: window.innerWidth < 768 ? '1.5rem' : '3rem' }}>
+          {/* Left Column: Utilities & Meters */}
+          <div className="flex flex-col gap-8">
+            {/* Utilities Section */}
+            <div className="card">
+              <div className="flex justify-between items-center" style={{ marginBottom: '2rem' }}>
+                <h3 className="font-heading" style={{ fontSize: '1.5rem' }}>Servicios y Gastos</h3>
+                <button 
+                  onClick={() => setIsAddingUtility(!isAddingUtility)} 
+                  className={isAddingUtility ? 'btn btn-outline' : 'btn btn-primary'} 
+                  style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
+                >
+                  {isAddingUtility ? 'Cerrar' : '+ Registrar Gasto'}
+                </button>
+              </div>
+
+              {isAddingUtility && (
+                <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: 'var(--bg-main)', borderRadius: '1rem', border: '1px solid var(--border)' }}>
+                  <AddUtilityForm propertyId={property.id} onDone={() => setIsAddingUtility(false)} />
+                </div>
+              )}
+
+              {!utilities || utilities.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                  No hay gastos registrados.
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {utilities.map((util) => (
+                    <div key={util.id} className="flex justify-between items-center" style={{ padding: '1.25rem', backgroundColor: 'var(--bg-surface)', borderRadius: '0.75rem' }}>
+                      <div>
+                        <div style={{ fontWeight: 600 }}>{UtilityTypeLabels[util.type]}</div>
+                        <div className="text-muted" style={{ fontSize: '0.75rem' }}>
+                          {util.billingMonth ? new Date(util.billingMonth).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }) : 'Recurrente'}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className={util.isIncludedInRent ? 'badge badge-success' : 'badge badge-warning'} style={{ fontSize: '0.65rem' }}>
+                          {util.isIncludedInRent ? 'En arriendo' : 'Extra'}
+                        </span>
+                        <span style={{ fontWeight: 700, fontSize: '1.125rem' }}>
+                          ${Number(util.amount).toLocaleString('es-CL')}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Reminders Card */}
+            <RemindersCard propertyId={property.id} />
+
+            {/* Dynamic Meters Card */}
+            <MetersCard propertyId={property.id} />
+          </div>
+
+          {/* Right Column: Tenant & Photos */}
+          <div className="flex flex-col gap-8">
+            {/* Active Tenant Section */}
+            <div className="card" style={{ 
+              border: property.activeTenant ? '1px solid var(--primary-light)' : '1px solid var(--border)', 
+              backgroundColor: property.activeTenant ? 'rgba(56, 122, 223, 0.02)' : 'var(--bg-main)' 
+            }}>
+              <h3 className="font-heading" style={{ fontSize: '1.25rem', marginBottom: '1.5rem' }}>
+                {activeTenancy ? 'Ocupación Actual' : 'Estado de Ocupación'}
+              </h3>
+              
+              {activeTenancy ? (
+                <div>
+                  <div className="flex items-center gap-4" style={{ marginBottom: '1.5rem' }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--primary)', color: 'white', display: 'grid', placeItems: 'center', fontSize: '1.25rem', fontWeight: 700 }}>
+                      {activeTenancy.tenant.name[0]}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 600 }}>{activeTenancy.tenant.name}</div>
+                      <div className="text-muted" style={{ fontSize: '0.75rem' }}>{activeTenancy.tenant.email || 'Sin email'}</div>
+                    </div>
+                  </div>
+                  
+                  <div style={{ backgroundColor: 'white', padding: '1.25rem', borderRadius: '0.75rem', border: '1px solid var(--border-light)', marginBottom: '2rem' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Canon de Arriendo</div>
+                    <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--primary)' }}>
+                      ${Number(activeTenancy.monthlyRent).toLocaleString('es-CL')}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <RegisterPaymentForm tenancyId={activeTenancy.id} />
+                  </div>
+                  
+                  <RecentPaymentsCard propertyId={property.id} />
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '1rem' }}>
+                  <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>👤</div>
+                  <p className="text-muted" style={{ marginBottom: '1.5rem', fontSize: '0.875rem' }}>Propiedad desocupada.</p>
+                  <button 
+                    onClick={() => setIsAssigningTenant(!isAssigningTenant)} 
+                    className={isAssigningTenant ? 'btn btn-outline' : 'btn btn-primary'} 
+                    style={{ width: '100%', padding: '0.75rem' }}
+                  >
+                    {isAssigningTenant ? 'Cancelar' : 'Asignar Inquilino'}
+                  </button>
+                  
+                  {isAssigningTenant && (
+                    <div style={{ marginTop: '1.5rem', textAlign: 'left', padding: '1.25rem', backgroundColor: 'white', borderRadius: '0.75rem', border: '1px solid var(--border)' }}>
+                      <AssignTenantForm propertyId={property.id} onDone={() => setIsAssigningTenant(false)} />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            {/* Photos Summary */}
+            <div className="card">
+              <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem' }}>
+                <h3 className="font-heading" style={{ fontSize: '1.25rem' }}>Fotos</h3>
+                <span className="text-muted" style={{ fontSize: '0.75rem' }}>{property.photos?.length || 0} fotos</span>
+              </div>
+              
+              <input 
+                type="file" 
+                accept="image/*" 
+                multiple
+                ref={fileInputRef} 
+                style={{ display: 'none' }} 
+                onChange={handleFileChange}
+              />
+
+              <div className="grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+                {property.photos?.map((photo, i) => (
+                  <div key={i} className="photo-container" style={{ aspectRatio: '1/1', backgroundColor: 'var(--bg-surface)', borderRadius: '0.5rem', overflow: 'hidden', position: 'relative', border: '1px solid var(--border)' }}>
+                    <img src={photo.url} alt={`Propiedad ${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    
+                    {/* Delete Button */}
+                    <button 
+                      onClick={() => {
+                        if (window.confirm('¿Eliminar esta foto?')) {
+                          deletePhotoMutation.mutate(photo.id);
+                        }
+                      }}
+                      style={{ position: 'absolute', top: '4px', right: '4px', width: '20px', height: '20px', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.6)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', fontSize: '10px' }}
+                    >
+                      ✕
+                    </button>
+
+                    {/* Ordering Arrows */}
+                    <div style={{ position: 'absolute', bottom: '4px', left: '0', userSelect: 'none', right: '0', display: 'flex', justifyContent: 'space-between', padding: '0 4px' }}>
+                      {i > 0 ? (
+                        <button 
+                          onClick={() => handleMovePhoto(i, 'left')}
+                          style={{ width: '24px', height: '24px', borderRadius: '0.25rem', backgroundColor: 'rgba(0,0,0,0.5)', color: 'white', display: 'grid', placeItems: 'center', border: 'none', cursor: 'pointer', fontSize: '12px' }}
+                        >
+                          ❮
+                        </button>
+                      ) : <div />}
+                      
+                      {i < (property.photos?.length || 0) - 1 ? (
+                        <button 
+                          onClick={() => handleMovePhoto(i, 'right')}
+                          style={{ width: '24px', height: '24px', borderRadius: '0.25rem', backgroundColor: 'rgba(0,0,0,0.5)', color: 'white', display: 'grid', placeItems: 'center', border: 'none', cursor: 'pointer', fontSize: '12px' }}
+                        >
+                          ❯
+                        </button>
+                      ) : <div />}
+                    </div>
+                  </div>
+                ))}
+                
+                <div 
+                  onClick={() => {
+                    if (fileInputRef.current) fileInputRef.current.click();
+                  }}
+                  style={{ 
+                    aspectRatio: '1/1', 
+                    backgroundColor: 'var(--bg-surface)', 
+                    borderRadius: '0.5rem', 
+                    display: 'grid', 
+                    placeItems: 'center', 
+                    cursor: uploadPhotoMutation.isPending ? 'wait' : 'pointer', 
+                    border: '2px dashed var(--border)',
+                    opacity: uploadPhotoMutation.isPending ? 0.5 : 1
+                  }}
+                >
+                  {uploadPhotoMutation.isPending ? (
+                    <div className="skeleton" style={{ width: '20px', height: '20px', borderRadius: '50%' }}></div>
+                  ) : (
+                    <span style={{ fontSize: '1.5rem', color: 'var(--text-muted)' }}>+</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- Sub-components (Forms) ---
+
+function AddUtilityForm({ propertyId, onDone }: { propertyId: string, onDone: () => void }) {
+  const queryClient = useQueryClient();
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [frequency, setFrequency] = useState<ExpenseFrequency>(ExpenseFrequency.MONTHLY);
+  const [dueDay, setDueDay] = useState(new Date().getDate());
+  
+  const { register, handleSubmit, formState: { errors } } = useForm<CreateUtilityDto & { title?: string }>({
+    resolver: zodResolver(utilitySchema),
+    defaultValues: {
+      type: UtilityType.ELECTRICITY,
+      amount: 0,
+      isIncludedInRent: false,
+      title: '',
+    }
+  });
+
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: async (data: any) => {
+      // Si es recurrente, SOLO creamos el recordatorio pendiente para la fecha indicada
+      if (isRecurring) {
+        const startDate = data.billingMonth ? new Date(data.billingMonth + '-01') : new Date();
+        startDate.setDate(dueDay);
+
+        return api.post('/utilities/reminders', {
+          propertyId,
+          title: data.title || UtilityTypeLabels[data.type as UtilityType],
+          amount: data.amount,
+          frequency,
+          nextDueDate: startDate.toISOString(),
+        } as CreateExpenseReminderDto);
+      } else {
+        // Si NO es recurrente, es un gasto puntual que se registra de inmediato
+        return api.post('/utilities', { ...data, propertyId });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['utilities', propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['reminders', propertyId] });
+      toast.success(isRecurring ? 'Recordatorio configurado' : 'Gasto registrado');
+      onDone();
+    },
+    onError: () => toast.error('Error al procesar la solicitud'),
+  });
+
+  return (
+    <form onSubmit={handleSubmit((data) => mutate(data))} className="flex flex-col gap-4">
+      <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div className="flex flex-col gap-2">
+          <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Tipo de Servicio</label>
+          <select {...register('type')} style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', fontSize: '0.875rem', width: '100%' }}>
+            {Object.entries(UtilityTypeLabels).map(([val, label]) => (
+              <option key={val} value={val}>{label}</option>
+            ))}
+          </select>
+        </div>
+        <div className="flex flex-col gap-2">
+          <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Monto ($)</label>
+          <input {...register('amount', { valueAsNumber: true })} type="number" style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', fontSize: '0.875rem', width: '100%' }} />
+          {errors.amount && <span style={{ color: 'var(--danger)', fontSize: '0.7rem' }}>{errors.amount.message}</span>}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Descripción (opcional)</label>
+        <input {...register('title')} placeholder="Ej: Contribuciones 1er Trimestre" style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', fontSize: '0.875rem' }} />
+      </div>
+
+      <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div className="flex items-center gap-2">
+          <input {...register('isIncludedInRent')} type="checkbox" id="included" />
+          <label htmlFor="included" style={{ fontSize: '0.75rem' }}>Incluido en arriendo</label>
+        </div>
+        {!isRecurring && (
+          <div className="flex flex-col gap-1">
+            <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Mes de pago actual</label>
+            <input {...register('billingMonth')} type="month" style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', fontSize: '0.875rem', width: '100%' }} />
+          </div>
+        )}
+      </div>
+
+      {/* Recurrence Selector */}
+      <div style={{ padding: '1.25rem', backgroundColor: 'rgba(56, 122, 223, 0.05)', borderRadius: '1rem', border: '1px dashed var(--primary-light)' }}>
+        <div className="flex items-center gap-2" style={{ marginBottom: isRecurring ? '1rem' : 0 }}>
+          <input 
+            type="checkbox" 
+            id="recurring" 
+            checked={isRecurring} 
+            onChange={(e) => setIsRecurring(e.target.checked)} 
+          />
+          <label htmlFor="recurring" style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--primary)' }}>Registrar como Gasto Periódico</label>
+        </div>
+
+        {isRecurring && (
+          <div className="flex flex-col gap-3 animate-fade-in">
+            <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="flex flex-col gap-1">
+                <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Frecuencia</label>
+                <select 
+                  value={frequency} 
+                  onChange={(e) => setFrequency(e.target.value as ExpenseFrequency)}
+                  style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', fontSize: '0.875rem', width: '100%' }}
+                >
+                  {Object.entries(ExpenseFrequencyLabels).map(([val, label]) => (
+                    <option key={val} value={val}>{label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Día de Pago</label>
+                <input 
+                  type="number" 
+                  min={1} 
+                  max={31} 
+                  value={dueDay} 
+                  onChange={(e) => setDueDay(Number(e.target.value))} 
+                  style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', fontSize: '0.875rem', width: '100%' }}
+                />
+              </div>
+            </div>
+
+            {frequency !== ExpenseFrequency.MONTHLY && (
+              <div className="flex flex-col gap-1" style={{ padding: '0.75rem', backgroundColor: 'white', borderRadius: '0.5rem', border: '1px solid var(--border-light)' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Mes del primer cobro</label>
+                <input 
+                  {...register('billingMonth')} 
+                  type="month" 
+                  required 
+                  style={{ padding: '0.5rem', borderRadius: '0.4rem', border: '1px solid var(--border)', fontSize: '0.8125rem', width: '100%' }} 
+                />
+                <p style={{ fontSize: '0.65rem', color: 'var(--primary)', marginTop: '0.25rem' }}>
+                   * El mes elegido define en qué momento del año se repite el cobro.
+                </p>
+              </div>
+            )}
+
+            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+              💡 {frequency === ExpenseFrequency.MONTHLY 
+                ? 'Se generará un recordatorio todos los meses.' 
+                : `Se cobrará el día ${dueDay} del mes seleccionado y se repetirá según la frecuencia ${ExpenseFrequencyLabels[frequency].toLowerCase()}.`}
+            </p>
+          </div>
+        )}
+      </div>
+
+      <button disabled={isPending} className="btn btn-primary" style={{ height: '3.5rem', fontSize: '0.9rem', fontWeight: 700 }}>
+        {isPending ? 'Procesando...' : 'Confirmar y Guardar'}
+      </button>
+    </form>
+  );
+}
+
+function RegisterPaymentForm({ tenancyId }: { tenancyId: string }) {
+  const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<CreatePaymentDto>({
+    resolver: zodResolver(paymentSchema),
+    defaultValues: {
+      propertyTenantId: tenancyId,
+      paymentDate: new Date().toISOString().split('T')[0],
+      paymentMethod: PaymentMethod.TRANSFER,
+      amount: 0,
+    }
+  });
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: async (data: CreatePaymentDto) => {
+      const resp = await api.post('/payments', { ...data, propertyTenantId: tenancyId });
+      return resp.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['active-tenancy', id] });
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['recent-payments', id] });
+      toast.success('Pago registrado correctamente');
+      reset();
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Error al registrar el pago');
+    }
+  });
+
+  return (
+    <form onSubmit={handleSubmit((data) => mutate(data))} className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1">
+        <input 
+          {...register('amount', { valueAsNumber: true })} 
+          type="number" 
+          placeholder="Monto Pagado" 
+          style={{ padding: '0.65rem', borderRadius: '0.5rem', border: '1px solid var(--border)', fontSize: '0.9rem', width: '100%' }} 
+        />
+        {errors.amount && <span style={{ color: 'var(--danger)', fontSize: '0.7rem' }}>{errors.amount.message}</span>}
+      </div>
+      
+      <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+        <input 
+          {...register('paymentDate')} 
+          type="date" 
+          style={{ padding: '0.6rem', borderRadius: '0.5rem', border: '1px solid var(--border)', fontSize: '0.85rem' }} 
+        />
+        <select 
+          {...register('paymentMethod')} 
+          style={{ padding: '0.6rem', borderRadius: '0.5rem', border: '1px solid var(--border)', fontSize: '0.85rem' }}
+        >
+          <option value={PaymentMethod.TRANSFER}>Transferencia</option>
+          <option value={PaymentMethod.CASH}>Efectivo</option>
+          <option value={PaymentMethod.DEPOSIT}>Depósito</option>
+          <option value={PaymentMethod.CHECK}>Cheque</option>
+          <option value={PaymentMethod.OTHER}>Otro</option>
+        </select>
+      </div>
+
+      <textarea 
+        {...register('notes')} 
+        placeholder="Comentarios..." 
+        rows={2} 
+        style={{ padding: '0.65rem', borderRadius: '0.5rem', border: '1px solid var(--border)', fontSize: '0.9rem', resize: 'none', fontFamily: 'inherit' }}
+      />
+
+      <button disabled={isPending} className="btn btn-primary" style={{ height: '2.75rem', fontSize: '0.875rem', fontWeight: 600 }}>
+        {isPending ? 'Procesando...' : 'Registrar Pago de Arriendo'}
+      </button>
+    </form>
+  );
+}
+
+function EditPropertyForm({ property, onDone }: { property: PropertyDto, onDone: () => void }) {
+  const queryClient = useQueryClient();
+  const { register, handleSubmit, watch, control } = useForm<UpdatePropertyDto>({
+    defaultValues: {
+      address: property.address,
+      category: property.category,
+      customCategory: property.customCategory || '',
+      paymentDueDay: property.paymentDueDay,
+      rol: property.rol ?? '',
+      notes: property.notes ?? '',
+      expectedRent: property.expectedRent ?? undefined,
+      contractEndDate: property.contractEndDate ? new Date(property.contractEndDate).toISOString().split('T')[0] : '',
+    }
+  });
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: async (data: UpdatePropertyDto) => {
+      const resp = await api.patch(`/properties/${property.id}`, data);
+      return resp.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['property', property.id] });
+      toast.success('Propiedad actualizada');
+      onDone();
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Error al actualizar propiedad');
+    }
+  });
+  
+  const navigate = useNavigate();
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      await api.delete(`/properties/${property.id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
+      toast.success('Propiedad eliminada permanentemente');
+      navigate('/properties');
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Error al eliminar propiedad');
+    }
+  });
+
+  const handleDelete = () => {
+    if (window.confirm('¿ESTÁS SEGURO? Esta acción es permanente y eliminará todos los gastos y contratos asociados a esta propiedad.')) {
+      deleteMutation.mutate();
+    }
+  };
+
+  const inputStyle = { padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', width: '100%', fontSize: '0.9rem' };
+
+  const quillModules = {
+    toolbar: [
+      ['bold', 'italic', 'underline'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      ['link'],
+      ['clean']
+    ],
+  };
+
+  return (
+    <form onSubmit={handleSubmit((data) => mutate(data))} className="flex flex-col gap-4">
+      <div className="flex justify-between items-center" style={{ marginBottom: '0.5rem' }}>
+        <p style={{ fontSize: '1rem', fontWeight: 700 }}>Editar Propiedad</p>
+        <button 
+          type="button" 
+          onClick={handleDelete}
+          disabled={deleteMutation.isPending}
+          className="btn"
+          style={{ 
+            backgroundColor: 'transparent', 
+            color: 'var(--danger)', 
+            border: '1px solid var(--danger)',
+            fontSize: '0.75rem',
+            padding: '0.4rem 0.8rem'
+          }}
+        >
+          {deleteMutation.isPending ? 'Eliminando...' : '🗑️ Eliminar Propiedad'}
+        </button>
+      </div>
+      <div className="flex flex-col gap-2">
+        <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Dirección</label>
+        <input {...register('address')} style={inputStyle} />
+      </div>
+      <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div className="flex flex-col gap-2">
+          <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Día de Pago</label>
+          <input {...register('paymentDueDay', { valueAsNumber: true })} type="number" min="1" max="31" style={inputStyle} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Vencimiento Contrato</label>
+          <input {...register('contractEndDate')} type="date" style={inputStyle} />
+        </div>
+      </div>
+
+      <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div className="flex flex-col gap-2">
+          <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Categoría</label>
+          <select {...register('category')} style={inputStyle}>
+            <option value={PropertyCategory.HOUSE}>Casa</option>
+            <option value={PropertyCategory.APARTMENT}>Departamento</option>
+            <option value={PropertyCategory.OFFICE}>Oficina/Local</option>
+            <option value={PropertyCategory.LAND}>Terreno</option>
+            <option value={PropertyCategory.OTHER}>Otro</option>
+          </select>
+        </div>
+        {watch('category') === PropertyCategory.OTHER && (
+          <div className="flex flex-col gap-2">
+            <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Tipo Específico</label>
+            <input {...register('customCategory')} placeholder="Ej: Bodega, Cabaña" style={inputStyle} />
+          </div>
+        )}
+      </div>
+
+      <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div className="flex flex-col gap-2">
+          <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>ROL de Avalúo SII</label>
+          <input {...register('rol')} placeholder="Ej: 1234-56" style={inputStyle} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary)' }}>Precio Esperado de Arriendo ($)</label>
+          <input {...register('expectedRent', { valueAsNumber: true })} type="number" placeholder="Ej: 450000" style={inputStyle} />
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Notas de la Propiedad</label>
+        <div className="quill-container">
+          <Controller
+            name="notes"
+            control={control}
+            render={({ field }) => (
+              <ReactQuill 
+                theme="snow"
+                value={field.value || ''}
+                onChange={field.onChange}
+                modules={quillModules}
+                style={{ height: '200px', marginBottom: '3rem', backgroundColor: 'white' }}
+              />
+            )}
+          />
+        </div>
+      </div>
+
+      <div className="flex gap-2">
+        <button type="button" onClick={onDone} className="btn btn-outline" style={{ flex: 1 }}>Cancelar</button>
+        <button disabled={isPending} className="btn btn-primary" style={{ flex: 2 }}>{isPending ? 'Guardando...' : 'Guardar Cambios'}</button>
+      </div>
+    </form>
+  );
+}
+
+function AssignTenantForm({ propertyId, onDone }: { propertyId: string, onDone: () => void }) {
+  const queryClient = useQueryClient();
+  const { data: tenants } = useQuery<TenantDto[]>({
+    queryKey: ['tenants'],
+    queryFn: async () => {
+      const resp = await api.get('/tenants');
+      return resp.data;
+    },
+  });
+
+  const { register, handleSubmit } = useForm<AssignTenantDto>({
+    defaultValues: {
+      startDate: new Date().toISOString().split('T')[0],
+      monthlyRent: 350000,
+    }
+  });
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: async (data: AssignTenantDto) => {
+      const resp = await api.post(`/properties/${propertyId}/assign-tenant`, data);
+      return resp.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['active-tenancy', propertyId] });
+      toast.success('Inquilino asignado con éxito');
+      onDone();
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Error al asignar inquilino');
+    }
+  });
+
+  return (
+    <form onSubmit={handleSubmit((data) => mutate(data))} className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
+        <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Seleccionar Inquilino</label>
+        <select {...register('tenantId')} required style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', width: '100%', fontSize: '0.9rem' }}>
+          <option value="">Seleccione un inquilino...</option>
+          {tenants?.map(t => (
+            <option key={t.id} value={t.id}>{t.name} ({t.documentId})</option>
+          ))}
+        </select>
+      </div>
+      <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div className="flex flex-col gap-2">
+          <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Monto Arriendo ($)</label>
+          <input {...register('monthlyRent', { valueAsNumber: true })} type="number" required min="1" style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', width: '100%', fontSize: '0.9rem' }} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Fecha de Inicio</label>
+          <input {...register('startDate')} type="date" required style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', width: '100%', fontSize: '0.9rem' }} />
+        </div>
+      </div>
+      <button disabled={isPending || !tenants} className="btn btn-primary" style={{ height: '3rem', fontSize: '0.9rem', fontWeight: 600 }}>
+        {isPending ? 'Asignando...' : 'Confirmar Asignación'}
+      </button>
+    </form>
+  );
+}
+
+
+// ── RecentPaymentsCard ──────────────────────────────────────────────────────
+function RecentPaymentsCard({ propertyId }: { propertyId: string }) {
+  const queryClient = useQueryClient();
+
+  const { data: payments = [], isLoading } = useQuery<any[]>({
+    queryKey: ['recent-payments', propertyId],
+    queryFn: async () => {
+      const resp = await api.get(`/payments/property/${propertyId}`);
+      return resp.data;
+    },
+  });
+
+  const { mutate: deletePayment } = useMutation({
+    mutationFn: async (paymentId: string) => {
+      await api.delete(`/payments/${paymentId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recent-payments', propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      toast.success('Pago eliminado');
+    },
+    onError: () => toast.error('Error al eliminar el pago'),
+  });
+
+  const handleDelete = (id: string) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar este pago?')) {
+      deletePayment(id);
+    }
+  };
+
+  if (isLoading) return null;
+  if (payments.length === 0) return null;
+
+  return (
+    <div style={{ marginTop: '2rem' }}>
+      <h4 style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        Pagos Recientes
+      </h4>
+      <div className="flex flex-col gap-2">
+        {payments.slice(0, 5).map((payment) => (
+          <div 
+            key={payment.id} 
+            className="flex justify-between items-center" 
+            style={{ padding: '0.85rem 1rem', backgroundColor: 'white', borderRadius: '0.75rem', border: '1px solid var(--border-light)' }}
+          >
+            <div>
+              <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                ${Number(payment.amount).toLocaleString('es-CL')}
+              </div>
+              <div className="text-muted" style={{ fontSize: '0.75rem' }}>
+                {new Date(payment.paymentDate).toLocaleDateString()} • {payment.paymentMethod}
+              </div>
+            </div>
+            <button 
+              onClick={() => handleDelete(payment.id)}
+              style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '0.4rem', fontSize: '0.9rem' }}
+              title="Eliminar pago"
+            >
+              🗑
+            </button>
+          </div>
+        ))}
+        {payments.length > 5 && (
+          <Link to="/payments" style={{ fontSize: '0.75rem', textAlign: 'center', marginTop: '0.5rem', color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>
+            Ver todo el historial →
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── RemindersCard ──────────────────────────────────────────────────────────────
+function RemindersCard({ propertyId }: { propertyId: string }) {
+  const queryClient = useQueryClient();
+  const [showAll, setShowAll] = useState(false);
+
+  const { data: reminders = [], isLoading } = useQuery<ExpenseReminderDto[]>({
+    queryKey: ['reminders', propertyId],
+    queryFn: async () => {
+      const resp = await api.get(`/utilities/reminders/property/${propertyId}`);
+      return resp.data;
+    },
+  });
+
+  const { mutate: payReminder, isPending: isPaying } = useMutation({
+    mutationFn: async (id: string) => {
+      const resp = await api.post(`/utilities/reminders/${id}/pay`);
+      return resp.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reminders', propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['utilities', propertyId] });
+      toast.success('Pago registrado y recordatorio actualizado');
+    },
+    onError: () => toast.error('Error al registrar el pago'),
+  });
+
+  const { mutate: deleteReminder } = useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/utilities/reminders/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reminders', propertyId] });
+      toast.success('Recordatorio eliminado');
+    },
+  });
+
+  if (isLoading) return null;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Filtramos los que vencen pronto (7 días) o ya vencieron
+  const filteredReminders = reminders.filter(r => {
+    if (showAll) return true;
+    const dueDate = new Date(r.nextDueDate);
+    const diffTime = dueDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays <= 7; // Vencidos (negativo) o próximos (0-7)
+  });
+
+  const overdue = filteredReminders.filter(r => new Date(r.nextDueDate) < today);
+  const upcoming = filteredReminders.filter(r => new Date(r.nextDueDate) >= today);
+
+  return (
+    <div className="card" style={{ border: overdue.length > 0 ? '2px solid var(--danger)' : '1px solid var(--border)' }}>
+      <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem' }}>
+        <h3 className="font-heading" style={{ fontSize: '1.5rem' }}>Pagos Pendientes</h3>
+        <button 
+          onClick={() => setShowAll(!showAll)}
+          style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, textDecoration: 'underline' }}
+        >
+          {showAll ? 'Ver solo próximos' : 'Ver todos'}
+        </button>
+      </div>
+
+      {filteredReminders.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '1rem' }}>
+          <p className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>No hay pagos pendientes para los próximos 7 días.</p>
+          {!showAll && reminders.length > 0 && (
+            <button className="btn btn-outline" onClick={() => setShowAll(true)} style={{ fontSize: '0.75rem', padding: '0.4rem 0.8rem' }}>Ver programados ({reminders.length})</button>
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {/* Overdue Section */}
+          {overdue.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <span style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Vencidos</span>
+              {overdue.map(r => <ReminderItem key={r.id} r={r} onPay={payReminder} onDelete={deleteReminder} isPaying={isPaying} />)}
+            </div>
+          )}
+
+          {/* Upcoming Section */}
+          {upcoming.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <span style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {showAll ? 'Todos los recordatorios' : 'Próximos (7 días)'}
+              </span>
+              {upcoming.map(r => <ReminderItem key={r.id} r={r} onPay={payReminder} onDelete={deleteReminder} isPaying={isPaying} />)}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ReminderItem({ r, onPay, onDelete, isPaying }: { r: ExpenseReminderDto, onPay: (id: string) => void, onDelete: (id: string) => void, isPaying: boolean }) {
+  const dueDate = new Date(r.nextDueDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const isOverdue = dueDate < today;
+
+  return (
+    <div 
+      className="flex flex-col gap-3" 
+      style={{ 
+        padding: '1.25rem', 
+        background: isOverdue ? 'rgba(231, 76, 60, 0.05)' : 'var(--bg-surface)', 
+        borderRadius: '1rem',
+        border: isOverdue ? '1px solid rgba(231, 76, 60, 0.2)' : '1px solid var(--border-light)'
+      }}
+    >
+      <div className="flex justify-between items-start">
+        <div>
+          <div style={{ fontWeight: 800, fontSize: '1rem', marginBottom: '0.25rem' }}>{r.title}</div>
+          <div className="flex gap-2 items-center">
+            <span className="text-muted" style={{ fontSize: '0.75rem' }}>{ExpenseFrequencyLabels[r.frequency]}</span>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: isOverdue ? 'var(--danger)' : 'var(--text-muted)' }}>
+              {isOverdue ? '⚠️ Vencido: ' : '📅 Vence: '}
+              {dueDate.toLocaleDateString('es-CL', { day: '2-digit', month: 'long' })}
+            </span>
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontWeight: 800, fontSize: '1.125rem', color: 'var(--primary)' }}>
+            ${Number(r.amount).toLocaleString('es-CL')}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex gap-2" style={{ marginTop: '0.5rem' }}>
+        <button 
+          disabled={isPaying}
+          onClick={() => onPay(r.id)}
+          className="btn btn-primary" 
+          style={{ flex: 1, padding: '0.55rem', fontSize: '0.75rem', fontWeight: 700 }}
+        >
+          Marcar como Pagado
+        </button>
+        <button 
+          onClick={() => { if(window.confirm('¿Eliminar recordatorio?')) onDelete(r.id); }}
+          className="btn btn-outline" 
+          style={{ padding: '0.5rem 0.75rem', fontSize: '0.75rem', color: 'var(--danger)' }}
+        >
+          🗑
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── MetersCard ──────────────────────────────────────────────────────────────
+function MetersCard({ propertyId }: { propertyId: string }) {
+  const queryClient = useQueryClient();
+  const [isAdding, setIsAdding] = useState(false);
+  const [label, setLabel] = useState('');
+  const [number, setNumber] = useState('');
+
+  const SUGGESTIONS = ['Luz', 'Agua', 'Gas', 'Calefacción', 'Internet', 'Ascensor', 'Otro'];
+
+  const { data: meters = [], isLoading } = useQuery<PropertyMeterDto[]>({
+    queryKey: ['meters', propertyId],
+    queryFn: async () => {
+      const resp = await api.get(`/properties/${propertyId}/meters`);
+      return resp.data;
+    },
+  });
+
+  const { mutate: addMeter, isPending: isAdding_ } = useMutation({
+    mutationFn: async (dto: CreatePropertyMeterDto) => {
+      const resp = await api.post(`/properties/${propertyId}/meters`, dto);
+      return resp.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['meters', propertyId] });
+      setLabel('');
+      setNumber('');
+      setIsAdding(false);
+      toast.success('Medidor agregado');
+    },
+    onError: () => toast.error('Error al agregar medidor'),
+  });
+
+  const { mutate: deleteMeter } = useMutation({
+    mutationFn: async (meterId: string) => {
+      await api.delete(`/properties/${propertyId}/meters/${meterId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['meters', propertyId] });
+      toast.success('Medidor eliminado');
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!label.trim() || !number.trim()) return;
+    addMeter({ label: label.trim(), number: number.trim() });
+  };
+
+  const inputStyle = {
+    padding: '0.55rem 0.75rem',
+    borderRadius: '0.4rem',
+    border: '1px solid var(--border)',
+    fontSize: '0.875rem',
+    width: '100%',
+    fontFamily: 'inherit',
+  };
+
+  return (
+    <div className="card">
+      <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem' }}>
+        <h3 className="font-heading" style={{ fontSize: '1.5rem' }}>Medidores</h3>
+        <button
+          onClick={() => setIsAdding(!isAdding)}
+          className={isAdding ? 'btn btn-outline' : 'btn btn-primary'}
+          style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
+        >
+          {isAdding ? 'Cerrar' : '+ Agregar'}
+        </button>
+      </div>
+
+      {/* Add form */}
+      {isAdding && (
+        <form onSubmit={handleSubmit} style={{ marginBottom: '1.5rem', padding: '1.25rem', background: 'var(--bg-main)', borderRadius: '0.75rem', border: '1px solid var(--border)' }}>
+          <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+            <div className="flex flex-col gap-1">
+              <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Nombre del medidor</label>
+              <input
+                list="meter-suggestions"
+                value={label}
+                onChange={e => setLabel(e.target.value)}
+                placeholder="Ej: Luz, Agua, Gas..."
+                style={inputStyle}
+                required
+              />
+              <datalist id="meter-suggestions">
+                {SUGGESTIONS.map(s => <option key={s} value={s} />)}
+              </datalist>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Número de medidor</label>
+              <input
+                value={number}
+                onChange={e => setNumber(e.target.value)}
+                placeholder="Ej: 1234567"
+                style={inputStyle}
+                required
+              />
+            </div>
+          </div>
+          <button disabled={isAdding_} className="btn btn-primary" style={{ width: '100%', height: '2.5rem', fontSize: '0.875rem' }}>
+            {isAdding_ ? 'Guardando...' : 'Guardar Medidor'}
+          </button>
+        </form>
+      )}
+
+      {/* List */}
+      {isLoading ? (
+        <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)' }}>Cargando...</div>
+      ) : meters.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+          No hay medidores registrados. Agrega uno con el botón de arriba.
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {meters.map((meter) => (
+            <div
+              key={meter.id}
+              className="flex justify-between items-center"
+              style={{ padding: '0.9rem 1.1rem', background: 'var(--bg-surface)', borderRadius: '0.75rem' }}
+            >
+              <div>
+                <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{meter.label}</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>Nro. {meter.number}</div>
+              </div>
+              <button
+                onClick={() => deleteMeter(meter.id)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', fontSize: '1rem', padding: '0.25rem 0.5rem', borderRadius: '0.4rem' }}
+                title="Eliminar medidor"
+              >
+                🗑
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

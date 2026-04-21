@@ -1,0 +1,23 @@
+{
+  "name": "propiedades",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c cyan,magenta \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
+    "dev:api": "npm run dev -w apps/api",
+    "dev:web": "npm run dev -w apps/web",
+    "db:migrate": "npm run migrate -w packages/database",
+    "db:generate": "npm run generate -w packages/database",
+    "db:studio": "npm run studio -w packages/database",
+    "db:seed": "npm run seed -w packages/database",
+    "build": "npm run build -w packages/types && npm run build -w apps/api && npm run build -w apps/web",
+    "lint": "npm run lint --workspaces --if-present",
+    "types:build": "npm run build -w packages/types"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
