@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
-import { AppModule } from '../src/app.module';
+import { AppModule } from './apps/api/src/app.module'; // Ruta corregida desde la raíz
 import * as express from 'express';
 
 const server = express();
@@ -13,9 +13,8 @@ async function bootstrap() {
   if (!app) {
     app = await NestFactory.create(AppModule, adapter);
     
-    // Configuración idéntica a main.ts
     app.enableCors({
-      origin: true, // Permitir cualquier origen en Vercel para pruebas (puedes restringirlo luego)
+      origin: true,
       credentials: true,
     });
 

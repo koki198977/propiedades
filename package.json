@@ -13,7 +13,7 @@
     "db:generate": "npm run generate -w packages/database",
     "db:studio": "npm run studio -w packages/database",
     "db:seed": "npm run seed -w packages/database",
-    "build": "npm run build -w packages/types && npm run build -w apps/api && npm run build -w apps/web",
+    "build": "npm run db:generate && npm run build -w packages/types && npm run build -w apps/api && npm run build -w apps/web",
     "lint": "npm run lint --workspaces --if-present",
     "types:build": "npm run build -w packages/types"
   },
