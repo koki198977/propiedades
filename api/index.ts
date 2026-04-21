@@ -1,8 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
-import { AppModule } from './apps/api/src/app.module'; // Ruta corregida desde la raíz
-import * as express from 'express';
+import { AppModule } from '../apps/api/src/app.module'; // Añadido ../ para subir a la raíz
+import express from 'express'; // Importación más amigable
 
 const server = express();
 const adapter = new ExpressAdapter(server);
