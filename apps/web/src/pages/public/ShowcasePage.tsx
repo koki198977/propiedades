@@ -15,8 +15,26 @@ export default function ShowcasePage() {
       const resp = await api.get(`/showcase/${userId}`);
       return resp.data;
     },
-    retry: 1, // Si no encuentra el public link, no seguir iterando
+    retry: 1,
   });
+
+  const { owner, properties } = (data as any) || {};
+
+  // Paginación local
+  const totalItems = properties?.length || 0;
+  const totalPages = useMemo(() => Math.ceil(totalItems / PAGE_SIZE), [totalItems]);
+  const paginatedProperties = useMemo(() => {
+    if (!properties) return [];
+    return properties.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  }, [properties, page]);
+
+  const handleContact = (property: any) => {
+    if (!owner) return;
+    // Generar mensaje de WhatsApp pre-rellenado
+    const message = `Hola ${owner.name}, me interesa la propiedad "${property.address}" que tienes disponible. ¿Me podrías dar más información?`;
+    const encoded = encodeURIComponent(message);
+    window.open(`https://wa.me/${owner.whatsapp?.replace(/\+/g, '') || ''}?text=${encoded}`, '_blank');
+  };
 
   if (isLoading) {
     return (
@@ -38,32 +56,21 @@ export default function ShowcasePage() {
     );
   }
 
-  const { owner, properties } = data;
-
-  // Paginación local
-  const totalPages = useMemo(() => Math.ceil((properties?.length || 0) / PAGE_SIZE), [properties]);
-  const paginatedProperties = useMemo(() => {
-    if (!properties) return [];
-    return properties.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  }, [properties, page]);
-
-  const handleContact = (property: any) => {
-    // Generar mensaje de WhatsApp pre-rellenado
-    const message = `Hola ${owner.name}, me interesa la propiedad "${property.address}" que tienes disponible. ¿Me podrías dar más información?`;
-    const encoded = encodeURIComponent(message);
-    window.open(`https://wa.me/${owner.whatsapp.replace(/\+/g, '')}?text=${encoded}`, '_blank');
-  };
-
   return (
     <div style={{ backgroundColor: '#f9fafb', minHeight: '100vh' }}>
       {/* Header Showcase */}
-      <header style={{ backgroundColor: 'white', borderBottom: '1px solid var(--border)', padding: '2rem 1rem', textAlign: 'center' }}>
+      <header style={{ backgroundColor: 'white', borderBottom: '1px solid var(--border)', padding: '2.5rem 1rem', textAlign: 'center' }}>
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <img 
+            src="/logo.png?v=3" 
+            alt="Logo" 
+            style={{ height: '120px', width: 'auto', marginBottom: '1rem', objectFit: 'contain' }} 
+          />
           <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'var(--primary)', color: 'white', display: 'grid', placeItems: 'center', fontSize: '1.5rem', fontWeight: 700, margin: '0 auto 1rem auto' }}>
-            {owner.name.charAt(0).toUpperCase()}
+            {owner?.name ? owner.name.charAt(0).toUpperCase() : '?'}
           </div>
           <h1 style={{ fontSize: '2rem', fontFamily: 'var(--font-heading)', color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-            Propiedades de {owner.name}
+            Propiedades de {owner?.name || 'Administrador'}
           </h1>
           <p className="text-muted" style={{ fontSize: '1.1rem' }}>Vitrina de inmuebles actualmente disponibles para arriendo.</p>
         </div>
@@ -108,7 +115,7 @@ export default function ShowcasePage() {
                   </h3>
                   
                   <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)', marginBottom: '1rem' }}>
-                    {property.expectedRent ? `$${property.expectedRent.toLocaleString('es-CL')}` : 'Consultar Valor'}
+                    {typeof property.expectedRent === 'number' ? `$${property.expectedRent.toLocaleString('es-CL')}` : 'Consultar Valor'}
                   </div>
 
                   {property.notes && (

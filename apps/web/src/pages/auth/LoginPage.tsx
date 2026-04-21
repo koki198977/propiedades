@@ -39,7 +39,7 @@ export default function LoginPage() {
     <div className="animate-fade-in" style={{ display: 'grid', placeItems: 'center', minHeight: '60vh' }}>
       <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
         <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-          <img src="/logo-premium.png" alt="Logo" style={{ height: '70px', width: 'auto', marginBottom: '1.5rem' }} />
+          <img src="/logo.png?v=3" alt="Logo" style={{ height: '120px', width: 'auto', marginBottom: '1rem', objectFit: 'contain' }} />
           <h2 className="font-heading" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>Bienvenido</h2>
           <p className="text-muted" style={{ fontSize: '0.95rem' }}>Accede al centro de control de Propiedades Premium</p>
         </div>
