@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
@@ -5,6 +6,8 @@ import { PropertyCategoryLabels, PropertyCategory } from '@propiedades/types';
 
 export default function ShowcasePage() {
   const { userId } = useParams<{ userId: string }>();
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 8; // 2 filas de 4 en desktop
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['showcase', userId],
@@ -37,6 +40,13 @@ export default function ShowcasePage() {
 
   const { owner, properties } = data;
 
+  // Paginación local
+  const totalPages = useMemo(() => Math.ceil((properties?.length || 0) / PAGE_SIZE), [properties]);
+  const paginatedProperties = useMemo(() => {
+    if (!properties) return [];
+    return properties.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  }, [properties, page]);
+
   const handleContact = (property: any) => {
     // Generar mensaje de WhatsApp pre-rellenado
     const message = `Hola ${owner.name}, me interesa la propiedad "${property.address}" que tienes disponible. ¿Me podrías dar más información?`;
@@ -61,9 +71,10 @@ export default function ShowcasePage() {
 
       {/* Grid de Propiedades */}
       <main className="container animate-fade-in" style={{ padding: '3rem 1rem' }}>
-        {properties && properties.length > 0 ? (
-          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '2rem' }}>
-            {properties.map((property: any) => (
+        {paginatedProperties && paginatedProperties.length > 0 ? (
+          <>
+            <div className="property-grid" style={{ gap: '2rem' }}>
+              {paginatedProperties.map((property: any) => (
               <div key={property.id} className="card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                 
                 {/* Cuadro de imagen */}
@@ -127,6 +138,62 @@ export default function ShowcasePage() {
               </div>
             ))}
           </div>
+
+          {/* Paginación */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2" style={{ marginTop: '4rem' }}>
+              <button
+                onClick={() => {
+                  setPage(p => Math.max(1, p - 1));
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                disabled={page === 1}
+                className="btn btn-outline"
+                style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', opacity: page === 1 ? 0.4 : 1 }}
+              >
+                ← Anterior
+              </button>
+
+              <div className="flex gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                  <button
+                    key={p}
+                    onClick={() => {
+                      setPage(p);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    style={{
+                      width: '2.25rem',
+                      height: '2.25rem',
+                      borderRadius: '0.5rem',
+                      border: p === page ? 'none' : '1px solid var(--border)',
+                      background: p === page ? 'var(--primary)' : 'transparent',
+                      color: p === page ? 'white' : 'inherit',
+                      cursor: 'pointer',
+                      fontWeight: p === page ? 700 : 400,
+                      fontSize: '0.875rem',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => {
+                  setPage(p => Math.min(totalPages, p + 1));
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                disabled={page === totalPages}
+                className="btn btn-outline"
+                style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', opacity: page === totalPages ? 0.4 : 1 }}
+              >
+                Siguiente →
+              </button>
+            </div>
+          )}
+          </>
         ) : (
           <div style={{ textAlign: 'center', padding: '4rem 0' }}>
             <div style={{ fontSize: '4rem', marginBottom: '1rem', opacity: 0.5 }}>🏡</div>
