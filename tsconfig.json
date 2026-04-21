@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "module": "CommonJS",
+    "target": "ES2021",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@propiedades/types": ["./packages/types/src/index.ts"]
+    }
+  },
+  "include": ["api/**/*", "apps/api/src/**/*", "packages/**/*"]
+}
