@@ -102,6 +102,12 @@ model Organization {
   properties Property[]
   tenants    Tenant[]
 
+  bankName          String?
+  bankAccountType   String?
+  bankAccountNumber String?
+  bankAccountRut     String?
+  bankAccountEmail   String?
+
   @@map("organizations")
 }
 

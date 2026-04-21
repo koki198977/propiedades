@@ -1,10 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PaymentDto, PaymentMethodLabels } from '@propiedades/types';
+import { useOrganization } from '../../providers/OrganizationProvider';
 import api from '@/api/axios';
 import toast from 'react-hot-toast';
 
 export default function PaymentsPage() {
   const queryClient = useQueryClient();
+  const { activeOrganization } = useOrganization();
+  
   const { data: payments, isLoading, error } = useQuery<PaymentDto[]>({
     queryKey: ['payments'],
     queryFn: async () => {
@@ -26,9 +29,34 @@ export default function PaymentsPage() {
     },
   });
 
+  const billingMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeOrganization) return;
+      const resp = await api.post(`/organizations/${activeOrganization.id}/billing/send-all`);
+      return resp.data;
+    },
+    onSuccess: (data) => {
+      if (data?.sent > 0) {
+        toast.success(`Cobranza emitida: ${data.sent} correos enviados.`);
+      } else {
+        toast.error(data?.message || 'No se enviaron correos.');
+      }
+    },
+    onError: (err: any) => {
+      const msg = err.response?.data?.message || 'Error al emitir cobranza. Verifica tus datos bancarios.';
+      toast.error(msg);
+    },
+  });
+
   const handleDelete = (id: string) => {
     if (window.confirm('¿Estás seguro de que deseas eliminar este registro de pago?')) {
       deletePayment(id);
+    }
+  };
+
+  const handleEmitBilling = () => {
+    if (window.confirm('¿Estás seguro de emitir la cobranza masiva? Se enviará un correo a todos los inquilinos con contrato activo.')) {
+      billingMutation.mutate();
     }
   };
 
@@ -47,10 +75,25 @@ export default function PaymentsPage() {
 
   return (
     <div className="container animate-fade-in" style={{ padding: '1.5rem 0' }}>
-      <div style={{ marginBottom: '2.5rem' }}>
-        <h2 className="font-heading" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>Historial de Pagos</h2>
-        <p className="text-muted">Revisa todos los ingresos registrados en el sistema</p>
+      <div className="flex justify-between items-start" style={{ marginBottom: '2.5rem' }}>
+        <div>
+          <h2 className="font-heading" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>Historial de Pagos</h2>
+          <p className="text-muted">Revisa todos los ingresos registrados en el sistema</p>
+        </div>
+        <button 
+          onClick={handleEmitBilling}
+          className="btn btn-primary flex items-center gap-2"
+          disabled={billingMutation.isPending || !activeOrganization}
+        >
+          {billingMutation.isPending ? 'Enviando...' : (
+            <>
+              <span>📧</span>
+              Emitir Cobranza
+            </>
+          )}
+        </button>
       </div>
+
 
       {error && (
         <div className="badge badge-danger" style={{ width: '100%', padding: '1rem', marginBottom: '2rem', textAlign: 'center' }}>

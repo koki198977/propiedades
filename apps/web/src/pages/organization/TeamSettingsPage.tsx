@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useOrganization } from '../../providers/OrganizationProvider';
 import { OrganizationRole, OrganizationMemberDto } from '@propiedades/types';
@@ -6,12 +6,12 @@ import toast from 'react-hot-toast';
 import api from '@/api/axios';
 
 export default function TeamSettingsPage() {
-  const { activeOrganization } = useOrganization();
+  const { activeOrganization, refreshOrganizations } = useOrganization();
   const queryClient = useQueryClient();
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<OrganizationRole>(OrganizationRole.VIEWER);
 
-  const { data: members, isLoading, error } = useQuery<OrganizationMemberDto[]>({
+  const { data: members, isLoading } = useQuery<OrganizationMemberDto[]>({
     queryKey: ['members', activeOrganization?.id],
     queryFn: async () => {
       if (!activeOrganization) return [];
@@ -51,6 +51,45 @@ export default function TeamSettingsPage() {
     },
   });
 
+  const updateOrgMutation = useMutation({
+    mutationFn: async (data: any) => {
+      await api.post(`/organizations/${activeOrganization?.id}`, data);
+    },
+    onSuccess: () => {
+      toast.success('Datos bancarios actualizados');
+      refreshOrganizations();
+    },
+    onError: (err: any) => {
+      const msg = err.response?.data?.message || 'Error al actualizar datos';
+      toast.error(msg);
+    },
+  });
+
+  const [bankData, setBankData] = useState({
+    bankName: '',
+    bankAccountType: '',
+    bankAccountNumber: '',
+    bankAccountRut: '',
+    bankAccountEmail: '',
+  });
+
+  useEffect(() => {
+    if (activeOrganization) {
+      setBankData({
+        bankName: activeOrganization.bankName || '',
+        bankAccountType: activeOrganization.bankAccountType || '',
+        bankAccountNumber: activeOrganization.bankAccountNumber || '',
+        bankAccountRut: activeOrganization.bankAccountRut || '',
+        bankAccountEmail: activeOrganization.bankAccountEmail || '',
+      });
+    }
+  }, [activeOrganization]);
+
+  const handleUpdateBank = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateOrgMutation.mutate(bankData);
+  };
+
   const handleInvite = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
@@ -71,7 +110,7 @@ export default function TeamSettingsPage() {
           </p>
           <button 
             className="btn btn-primary"
-            onClick={() => window.location.href = '/dashboard'} // Temporary redirect to dashboard where creation should be handled
+            onClick={() => window.location.href = '/dashboard'}
           >
             Ir al Dashboard
           </button>
@@ -87,18 +126,12 @@ export default function TeamSettingsPage() {
         <p className="text-muted">Gestiona el acceso y roles de colaboradores a: <strong>{activeOrganization.name}</strong></p>
       </div>
 
-      <div className="grid team-settings-grid" style={{ gap: '2rem' }}>
-        {/* MEMBERS LIST */}
-        <div className="card members-card">
-          <h3 style={{ fontSize: '1.25rem', marginBottom: '1.5rem', fontWeight: 600 }}>Miembros Actuales</h3>
-          
-          {isLoading ? (
-            <p className="text-muted">Cargando miembros...</p>
-          ) : error ? (
-            <p className="text-danger">Error al cargar listado.</p>
-          ) : members?.length === 0 ? (
-            <p className="text-muted">No hay miembros en esta organización.</p>
-          ) : (
+      <div className="grid team-settings-grid" style={{ gap: '2rem', gridTemplateColumns: '2fr 1fr' }}>
+        {/* LEFT COLUMN: MEMBERS & BANK */}
+        <div className="flex flex-col gap-8">
+          <div className="card members-card">
+            <h3 style={{ fontSize: '1.25rem', marginBottom: '1.5rem', fontWeight: 600 }}>Miembros Actuales</h3>
+            
             <div className="table-responsive">
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead style={{ backgroundColor: 'var(--bg-surface)', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
@@ -138,39 +171,113 @@ export default function TeamSettingsPage() {
                 </tbody>
               </table>
             </div>
-          )}
+          </div>
+
+          {/* BANK DETAILS SECTION */}
+          <div className="card">
+            <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Datos de Cobranza</h3>
+                <p className="text-muted" style={{ fontSize: '0.85rem' }}>Estos datos aparecerán en los correos de cobro enviados a los inquilinos.</p>
+              </div>
+              <button 
+                form="bank-form"
+                type="submit" 
+                className="btn btn-primary" 
+                disabled={updateOrgMutation.isPending}
+              >
+                {updateOrgMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
+              </button>
+            </div>
+            
+            <form id="bank-form" onSubmit={handleUpdateBank} className="grid grid-cols-2 gap-6">
+              <div className="flex flex-col gap-1">
+                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Banco</label>
+                <input 
+                  type="text" 
+                  className="input" 
+                  placeholder="Ej: Banco Estado" 
+                  value={bankData.bankName}
+                  onChange={e => setBankData({...bankData, bankName: e.target.value})}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Tipo de Cuenta</label>
+                <input 
+                  type="text" 
+                  className="input" 
+                  placeholder="Ej: Cuenta Corriente / Vista" 
+                  value={bankData.bankAccountType}
+                  onChange={e => setBankData({...bankData, bankAccountType: e.target.value})}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Número de Cuenta</label>
+                <input 
+                  type="text" 
+                  className="input" 
+                  placeholder="00000000" 
+                  value={bankData.bankAccountNumber}
+                  onChange={e => setBankData({...bankData, bankAccountNumber: e.target.value})}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>RUT del Titular</label>
+                <input 
+                  type="text" 
+                  className="input" 
+                  placeholder="12.345.678-9" 
+                  value={bankData.bankAccountRut}
+                  onChange={e => setBankData({...bankData, bankAccountRut: e.target.value})}
+                />
+              </div>
+              <div className="flex flex-col gap-1 col-span-2">
+                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Email para Comprobante (Opcional)</label>
+                <input 
+                  type="email" 
+                  className="input" 
+                  placeholder="pagos@tuempresa.com" 
+                  value={bankData.bankAccountEmail}
+                  onChange={e => setBankData({...bankData, bankAccountEmail: e.target.value})}
+                />
+                <p className="text-muted" style={{ fontSize: '0.75rem' }}>Se le pedirá al inquilino que envíe el comprobante a esta dirección.</p>
+              </div>
+            </form>
+          </div>
         </div>
 
-        {/* INVITE FORM */}
-        <div className="card glass">
-          <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', fontWeight: 600 }}>Invitar Colaborador</h3>
-          <p className="text-muted" style={{ fontSize: '0.85rem', marginBottom: '1.5rem' }}>
-            El usuario debe estar registrado previamente en la plataforma para poder ser agregado a este espacio.
-          </p>
-          <form onSubmit={handleInvite} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1">
-              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Email Registrado</label>
-              <input 
-                type="email" 
-                className="input" 
-                placeholder="colaborador@correo.com" 
-                required 
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Rol de Acceso</label>
-              <select className="input" value={role} onChange={e => setRole(e.target.value as OrganizationRole)}>
-                <option value={OrganizationRole.VIEWER}>VIEWER (Solo Lectura)</option>
-                <option value={OrganizationRole.EDITOR}>EDITOR (Escritura Básica)</option>
-                <option value={OrganizationRole.ADMIN}>ADMIN (Total)</option>
-              </select>
-            </div>
-            <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem' }} disabled={inviteMutation.isPending}>
-              {inviteMutation.isPending ? 'Enviando...' : 'Otorgar Acceso'}
-            </button>
-          </form>
+        {/* RIGHT COLUMN: INVITE */}
+        <div className="flex flex-col gap-6">
+          <div className="card glass">
+            <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', fontWeight: 600 }}>Invitar Colaborador</h3>
+            <p className="text-muted" style={{ fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+              El usuario debe estar registrado previamente en la plataforma para poder ser agregado a este espacio.
+            </p>
+            <form onSubmit={handleInvite} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Email Registrado</label>
+                <input 
+                  type="email" 
+                  className="input" 
+                  placeholder="colaborador@correo.com" 
+                  required 
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Rol de Acceso</label>
+                <select className="input" value={role} onChange={e => setRole(e.target.value as OrganizationRole)}>
+                  <option value={OrganizationRole.VIEWER}>VIEWER (Solo Lectura)</option>
+                  <option value={OrganizationRole.EDITOR}>EDITOR (Escritura Básica)</option>
+                  <option value={OrganizationRole.ADMIN}>ADMIN (Total)</option>
+                </select>
+              </div>
+              <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem' }} disabled={inviteMutation.isPending}>
+                {inviteMutation.isPending ? 'Enviando...' : 'Otorgar Acceso'}
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     </div>

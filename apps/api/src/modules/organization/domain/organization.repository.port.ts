@@ -9,6 +9,7 @@ export interface IOrganizationRepository {
   findAll(): Promise<Organization[]>;
   findAllByUserId(userId: string): Promise<OrganizationMember[]>;
   create(data: { name: string, slug: string, creatorId?: string }): Promise<Organization>;
+  update(id: string, data: Partial<Organization>): Promise<Organization>;
   
   // Member management
   addMember(organizationId: string, userId: string, role: OrganizationRole): Promise<OrganizationMember>;

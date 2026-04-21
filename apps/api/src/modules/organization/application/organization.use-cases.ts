@@ -34,13 +34,31 @@ export class CreateOrganizationUseCase {
 }
 
 @Injectable()
+export class UpdateOrganizationUseCase {
+  constructor(
+    @Inject(ORGANIZATION_REPOSITORY) private readonly organizationRepo: IOrganizationRepository,
+  ) {}
+
+  async execute(id: string, data: any) {
+    return this.organizationRepo.update(id, data);
+  }
+}
+
+@Injectable()
 export class GetOrganizationMembersUseCase {
   constructor(
     @Inject(ORGANIZATION_REPOSITORY) private readonly organizationRepo: IOrganizationRepository,
   ) {}
 
   async execute(organizationId: string) {
-    return this.organizationRepo.listMembers(organizationId);
+    const members = await this.organizationRepo.listMembers(organizationId);
+    return members.map(m => ({
+      ...m,
+      user: {
+        fullName: m.userFullName,
+        email: m.userEmail,
+      }
+    }));
   }
 }
 

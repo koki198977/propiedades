@@ -74,6 +74,21 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
     return this.mapToEntity(org!);
   }
 
+  async update(id: string, data: Partial<Organization>): Promise<Organization> {
+    const updated = await this.prisma.organization.update({
+      where: { id },
+      data: {
+        name: data.name,
+        bankName: data.bankName,
+        bankAccountType: data.bankAccountType,
+        bankAccountNumber: data.bankAccountNumber,
+        bankAccountRut: data.bankAccountRut,
+        bankAccountEmail: data.bankAccountEmail,
+      },
+    });
+    return this.mapToEntity(updated);
+  }
+
   async addMember(organizationId: string, userId: string, role: OrganizationRole): Promise<OrganizationMember> {
     const member = await this.prisma.organizationMember.create({
       data: {
@@ -147,6 +162,11 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
       org.createdAt,
       org.updatedAt,
       org.members ? org.members.map((m: any) => this.mapMemberToEntity(m)) : [],
+      org.bankName,
+      org.bankAccountType,
+      org.bankAccountNumber,
+      org.bankAccountRut,
+      org.bankAccountEmail,
     );
   }
 
@@ -162,6 +182,11 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
         id: m.organization.id,
         name: m.organization.name,
         slug: m.organization.slug,
+        bankName: m.organization.bankName,
+        bankAccountType: m.organization.bankAccountType,
+        bankAccountNumber: m.organization.bankAccountNumber,
+        bankAccountRut: m.organization.bankAccountRut,
+        bankAccountEmail: m.organization.bankAccountEmail,
         createdAt: m.organization.createdAt,
       } : undefined,
       m.user?.email,

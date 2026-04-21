@@ -58,6 +58,11 @@ export interface OrganizationDto {
   id: string
   name: string
   slug: string
+  bankName?: string
+  bankAccountType?: string
+  bankAccountNumber?: string
+  bankAccountRut?: string
+  bankAccountEmail?: string
   createdAt: string
 }
 

@@ -6,6 +6,7 @@ import { RequireRole } from '../../../shared/infrastructure/decorators/require-r
 import { 
   GetUserOrganizationsUseCase, 
   CreateOrganizationUseCase, 
+  UpdateOrganizationUseCase,
   GetOrganizationMembersUseCase,
   InviteMemberUseCase,
   RemoveMemberUseCase
@@ -20,6 +21,7 @@ export class OrganizationController {
   constructor(
     private readonly getOrgsUseCase: GetUserOrganizationsUseCase,
     private readonly createOrgUseCase: CreateOrganizationUseCase,
+    private readonly updateOrgUseCase: UpdateOrganizationUseCase,
     private readonly getMembersUseCase: GetOrganizationMembersUseCase,
     private readonly inviteMemberUseCase: InviteMemberUseCase,
     private readonly removeMemberUseCase: RemoveMemberUseCase,
@@ -35,6 +37,14 @@ export class OrganizationController {
   @ApiOperation({ summary: 'Crear una nueva organización' })
   async create(@Request() req: any, @Body() dto: CreateOrganizationDto) {
     return this.createOrgUseCase.execute(req.user.id, dto);
+  }
+
+  @Post(':id') // Using POST for update due to frontend preferences or PATCH
+  @UseGuards(OrganizationGuard)
+  @RequireRole(OrganizationRole.ADMIN)
+  @ApiOperation({ summary: 'Actualizar datos de la organización' })
+  async update(@Param('id') id: string, @Body() dto: any) {
+    return this.updateOrgUseCase.execute(id, dto);
   }
 
   @Get(':id/members')

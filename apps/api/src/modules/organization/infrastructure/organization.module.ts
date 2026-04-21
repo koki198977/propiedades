@@ -4,6 +4,7 @@ import { PrismaOrganizationRepository } from './prisma-organization.repository';
 import { 
   GetUserOrganizationsUseCase, 
   CreateOrganizationUseCase, 
+  UpdateOrganizationUseCase,
   GetOrganizationMembersUseCase,
   InviteMemberUseCase,
   RemoveMemberUseCase
@@ -19,6 +20,7 @@ import { OrganizationController } from './organization.controller';
     },
     GetUserOrganizationsUseCase,
     CreateOrganizationUseCase,
+    UpdateOrganizationUseCase,
     GetOrganizationMembersUseCase,
     InviteMemberUseCase,
     RemoveMemberUseCase,
