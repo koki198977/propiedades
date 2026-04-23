@@ -8,10 +8,13 @@ export class AssignTenantUseCase {
     @Inject(PROPERTY_REPOSITORY) private readonly propertyRepo: IPropertyRepository,
   ) {}
 
-  async execute(propertyId: string, userId: string, dto: AssignTenantDto) {
+  async execute(propertyId: string, organizationId: string, dto: AssignTenantDto) {
     const property = await this.propertyRepo.findById(propertyId);
     if (!property) throw new Error('Propiedad no encontrada');
-    if (property.userId !== userId) throw new Error('No tienes permiso para modificar esta propiedad');
+    
+    if (property.organizationId !== organizationId) {
+      throw new Error('Esta propiedad no pertenece a tu espacio de trabajo actual');
+    }
 
     return this.propertyRepo.assignTenant(propertyId, dto);
   }

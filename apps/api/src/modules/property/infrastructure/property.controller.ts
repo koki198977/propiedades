@@ -71,7 +71,7 @@ export class PropertyController {
   @RequireRole(OrganizationRole.ADMIN, OrganizationRole.EDITOR)
   @ApiOperation({ summary: 'Asignar un inquilino a la propiedad' })
   async assignTenant(@Param('id') id: string, @Request() req: any, @Body() dto: AssignTenantDto) {
-    return this.assignTenantUseCase.execute(id, req.user.id, dto);
+    return this.assignTenantUseCase.execute(id, req.organizationId, dto);
   }
 
   // ── Meters ────────────────────────────────────────────────────────────
