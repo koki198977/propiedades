@@ -26,13 +26,31 @@ export class ShowcaseController {
       throw new NotFoundException('Usuario no encontrado');
     }
 
-    // 2. Obtener propiedades disponibles (sin contrato activo)
+    // 2. Obtener los IDs y nombres de las organizaciones donde el usuario es miembro
+    const memberships = await this.propertyRepo.prisma.organizationMember.findMany({
+      where: { userId },
+      include: { organization: true }
+    });
+    const organizationIds = memberships.map(m => m.organizationId);
+    
+    // Usar el nombre de la primera organización si existe, de lo contrario el nombre del usuario
+    const displayName = memberships.length > 0 ? memberships[0].organization.name : user.fullName;
+
+    // 3. Obtener propiedades disponibles
     const properties = await this.propertyRepo.prisma.property.findMany({
       where: { 
-        userId, 
+        OR: [
+          { userId },
+          { organizationId: { in: organizationIds } }
+        ],
         isActive: true,
         tenants: {
-          none: { isActive: true } // Que no tengan inquilinos activos
+          none: { 
+            isActive: true,
+            tenant: {
+              name: { not: 'Histórico Sistema Anterior' }
+            }
+          }
         }
       },
       include: {
@@ -43,12 +61,12 @@ export class ShowcaseController {
       orderBy: { createdAt: 'desc' }
     });
 
-    // 3. Mapear los datos públicos (remover información sensible si existiera)
+    // 4. Mapear los datos públicos
     return {
       owner: {
-        name: user.fullName,
+        name: displayName,
         email: user.email,
-        whatsapp: '+56900000000' // En el futuro se podría traer desde el perfil del usuario
+        whatsapp: '+56900000000'
       },
       properties: properties.map(p => ({
         id: p.id,

@@ -40,7 +40,7 @@ export class GetDashboardMetricsUseCase {
       },
     });
 
-    const monthlyExpenses = await this.prisma.utility.aggregate({
+    const monthlyUtilities = await this.prisma.utility.aggregate({
       where: {
         property: { organizationId },
         OR: [
@@ -51,8 +51,16 @@ export class GetDashboardMetricsUseCase {
       _sum: { amount: true },
     });
 
+    const monthlyExpenses = await this.prisma.expense.aggregate({
+      where: {
+        organizationId,
+        date: { gte: startOfMonth, lte: endOfMonth },
+      },
+      _sum: { amount: true },
+    });
+
     const incomeSum = Number(monthlyIncome._sum.amount || 0);
-    const expensesSum = Number(monthlyExpenses._sum.amount || 0);
+    const expensesSum = Number(monthlyUtilities._sum.amount || 0) + Number(monthlyExpenses._sum.amount || 0);
 
     // 4. Monthly Income History (Last 6 months)
     const incomeHistory = [];
@@ -71,7 +79,7 @@ export class GetDashboardMetricsUseCase {
         _sum: { amount: true },
       });
 
-      const exp = await this.prisma.utility.aggregate({
+      const utilities = await this.prisma.utility.aggregate({
         where: {
           property: { organizationId },
           OR: [
@@ -82,8 +90,16 @@ export class GetDashboardMetricsUseCase {
         _sum: { amount: true }
       });
 
+      const expenses = await this.prisma.expense.aggregate({
+        where: {
+          organizationId,
+          date: { gte: start, lte: end },
+        },
+        _sum: { amount: true },
+      });
+
       const currIncome = Number(income._sum.amount || 0);
-      const currExpenses = Number(exp._sum.amount || 0);
+      const currExpenses = Number(utilities._sum.amount || 0) + Number(expenses._sum.amount || 0);
 
       incomeHistory.push({
         month: date.toLocaleDateString('es-ES', { month: 'short' }),
