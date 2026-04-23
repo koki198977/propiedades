@@ -303,7 +303,7 @@ export default function FinancialReportsPage() {
                       </div>
                     ) : (
                       <>
-                        <div style={{ fontWeight: 600 }}>{UtilityTypeLabels[item.type]}</div>
+                        <div style={{ fontWeight: 600 }}>{UtilityTypeLabels[item.type as UtilityType]}</div>
                         {item.description && <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{item.description}</div>}
                       </>
                     )}
@@ -328,7 +328,7 @@ export default function FinancialReportsPage() {
                       <div style={{ fontWeight: 600 }}>{item.description || 'Gastos de Propiedad'}</div>
                     ) : (
                       <>
-                        <div style={{ fontWeight: 600 }}>{UtilityTypeLabels[item.type]}</div>
+                        <div style={{ fontWeight: 600 }}>{UtilityTypeLabels[item.type as UtilityType]}</div>
                         {item.description && <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{item.description}</div>}
                       </>
                     )}
