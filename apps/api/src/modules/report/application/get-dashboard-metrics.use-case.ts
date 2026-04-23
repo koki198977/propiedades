@@ -62,7 +62,32 @@ export class GetDashboardMetricsUseCase {
     const incomeSum = Number(monthlyIncome._sum.amount || 0);
     const expensesSum = Number(monthlyUtilities._sum.amount || 0) + Number(monthlyExpenses._sum.amount || 0);
 
-    // 4. Monthly Income History (Last 6 months)
+    // 4. Historical Totals
+    const historicalIncome = await this.prisma.payment.aggregate({
+      where: {
+        propertyTenant: {
+          property: { organizationId }
+        }
+      },
+      _sum: { amount: true }
+    });
+
+    const historicalUtilities = await this.prisma.utility.aggregate({
+      where: {
+        property: { organizationId }
+      },
+      _sum: { amount: true }
+    });
+
+    const historicalExpenses = await this.prisma.expense.aggregate({
+      where: { organizationId },
+      _sum: { amount: true }
+    });
+
+    const historicalIncomeSum = Number(historicalIncome._sum.amount || 0);
+    const historicalExpensesSum = Number(historicalUtilities._sum.amount || 0) + Number(historicalExpenses._sum.amount || 0);
+
+    // 5. Monthly Income History (Last 6 months)
     const incomeHistory = [];
     for (let i = 5; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -117,8 +142,11 @@ export class GetDashboardMetricsUseCase {
         monthlyIncomeSum: incomeSum,
         monthlyExpensesSum: expensesSum,
         netIncomeSum: incomeSum - expensesSum,
+        historicalIncomeSum,
+        historicalExpensesSum,
+        historicalNetSum: historicalIncomeSum - historicalExpensesSum,
       },
-      incomeHistory, // Now contains income, expenses, and netIncome!
+      incomeHistory,
     };
   }
 }

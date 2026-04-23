@@ -64,7 +64,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid" style={{ marginBottom: '3rem', gap: '1.25rem', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+      <div className="grid" style={{ marginBottom: '3rem', gap: '1.25rem', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
         <div className="card" style={{ background: 'white' }}>
           <div className="flex justify-between items-center" style={{ marginBottom: '0.5rem' }}>
              <span className="text-muted" style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase' }}>Ingresos Mes</span>
@@ -73,7 +73,12 @@ export default function DashboardPage() {
           <div className="text-gradient" style={{ fontSize: '2rem', fontWeight: 800 }}>
             ${kpis.monthlyIncomeSum?.toLocaleString('es-CL') || 0}
           </div>
-          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Recaudación actual</div>
+          <div className="flex justify-between items-center" style={{ marginTop: '0.5rem', borderTop: '1px solid var(--border-light)', paddingTop: '0.5rem' }}>
+             <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Histórico</span>
+             <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--success)' }}>
+               ${kpis.historicalIncomeSum?.toLocaleString('es-CL') || 0}
+             </span>
+          </div>
         </div>
 
         <div className="card" style={{ background: 'white' }}>
@@ -84,7 +89,12 @@ export default function DashboardPage() {
           <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--danger)' }}>
             ${kpis.monthlyExpensesSum?.toLocaleString('es-CL') || 0}
           </div>
-           <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Gastos y servicios</div>
+          <div className="flex justify-between items-center" style={{ marginTop: '0.5rem', borderTop: '1px solid var(--border-light)', paddingTop: '0.5rem' }}>
+             <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Histórico</span>
+             <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--danger)' }}>
+               ${kpis.historicalExpensesSum?.toLocaleString('es-CL') || 0}
+             </span>
+          </div>
         </div>
 
         <div className="card" style={{ background: 'white' }}>
@@ -95,7 +105,12 @@ export default function DashboardPage() {
           <div style={{ fontSize: '2rem', fontWeight: 800, color: (kpis.netIncomeSum >= 0) ? 'var(--success)' : 'var(--danger)' }}>
             ${kpis.netIncomeSum?.toLocaleString('es-CL') || 0}
           </div>
-           <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Utilidad del periodo</div>
+          <div className="flex justify-between items-center" style={{ marginTop: '0.5rem', borderTop: '1px solid var(--border-light)', paddingTop: '0.5rem' }}>
+             <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Histórico</span>
+             <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--primary)' }}>
+               ${kpis.historicalNetSum?.toLocaleString('es-CL') || 0}
+             </span>
+          </div>
         </div>
 
         <div className="card" style={{ background: 'white' }}>
@@ -106,7 +121,9 @@ export default function DashboardPage() {
           <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--secondary)' }}>
             {kpis.occupancyRate}%
           </div>
-          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{kpis.activeTenants} / {kpis.totalProperties} arrendadas</div>
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.5rem', borderTop: '1px solid var(--border-light)', paddingTop: '0.5rem' }}>
+            {kpis.activeTenants} / {kpis.totalProperties} arrendadas
+          </div>
         </div>
       </div>
 
