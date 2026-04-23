@@ -50,7 +50,20 @@ export class GetFinancialStatementUseCase {
       orderBy: { createdAt: 'desc' },
     });
 
-    // 3. Process Income
+    // 3. Fetch General Expenses (New Expense Model)
+    const expenses = await this.prisma.expense.findMany({
+      where: {
+        organizationId,
+        date: { gte: startDate, lte: end },
+      },
+      include: {
+        property: true,
+        recordedBy: true,
+      },
+      orderBy: { date: 'desc' },
+    });
+
+    // 4. Process Income
     const incomeItems = payments.map(p => ({
       id: p.id,
       date: p.paymentDate.toISOString(),
@@ -63,13 +76,14 @@ export class GetFinancialStatementUseCase {
     }));
     const totalIncome = incomeItems.reduce((sum, item) => sum + item.amount, 0);
 
-    // 4. Process Expenses vs Costs
+    // 5. Process Expenses vs Costs
     // Classification: 
     // Costs (Gastos Propietario/Inversión): TAX, INSURANCE, OTHER (maintenance usually)
     // Expenses (Servicios Operacionales): ELECTRICITY, WATER, GAS, INTERNET, COMMON_EXPENSES
     const costTypes = [UtilityType.TAX, UtilityType.INSURANCE, UtilityType.OTHER];
     
-    const expenseItems = utilities
+    // Mapping utilities (Legacy)
+    const utilityExpenseItems = utilities
       .filter(u => !costTypes.includes(u.type as UtilityType))
       .map(u => ({
         id: u.id,
@@ -81,7 +95,7 @@ export class GetFinancialStatementUseCase {
         recordedBy: u.recordedBy?.fullName || 'Sistema',
       }));
 
-    const costItems = utilities
+    const utilityCostItems = utilities
       .filter(u => costTypes.includes(u.type as UtilityType))
       .map(u => ({
         id: u.id,
@@ -92,6 +106,22 @@ export class GetFinancialStatementUseCase {
         description: u.notes || undefined,
         recordedBy: u.recordedBy?.fullName || 'Sistema',
       }));
+
+    // Mapping NEW expenses
+    // We treat them as 'OTHER' type for DTO compatibility if it's a cost or a generic expense
+    const generalExpenseItems = expenses.map(e => ({
+      id: e.id,
+      date: e.date.toISOString(),
+      propertyAddress: e.property?.address || 'Gastos Generales',
+      type: UtilityType.OTHER, // Defaulting to OTHER for compatibility
+      amount: Number(e.amount),
+      description: `[${e.category}] ${e.description}`,
+      recordedBy: e.recordedBy?.fullName || 'Sistema',
+    }));
+
+    // Combine them (For now we'll put all general expenses into expenseItems)
+    const expenseItems = [...utilityExpenseItems, ...generalExpenseItems];
+    const costItems = utilityCostItems;
 
     const totalExpenses = expenseItems.reduce((sum, item) => sum + item.amount, 0);
     const totalCosts = costItems.reduce((sum, item) => sum + item.amount, 0);
