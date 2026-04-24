@@ -274,6 +274,7 @@ export interface AssignTenantDto {
   tenantId: string
   startDate: string        // ISO date
   monthlyRent: number
+  securityDeposit?: number
 }
 
 export interface PropertyTenantDto {
@@ -283,6 +284,8 @@ export interface PropertyTenantDto {
   startDate: string
   endDate?: string
   monthlyRent: number
+  securityDeposit?: number
+  isSecurityDepositReturned?: boolean
   isActive: boolean
 }
 

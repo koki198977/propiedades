@@ -509,12 +509,43 @@ export default function PropertyDetailsPage() {
                     </div>
                   </div>
                   
-                  <div style={{ backgroundColor: 'white', padding: '1.25rem', borderRadius: '0.75rem', border: '1px solid var(--border-light)', marginBottom: '2rem' }}>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Canon de Arriendo</div>
-                    <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--primary)' }}>
-                      ${Number(activeTenancy.monthlyRent).toLocaleString('es-CL')}
+                  <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
+                    <div style={{ backgroundColor: 'white', padding: '1.25rem', borderRadius: '0.75rem', border: '1px solid var(--border-light)' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Canon de Arriendo</div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)' }}>
+                        ${Number(activeTenancy.monthlyRent).toLocaleString('es-CL')}
+                      </div>
+                    </div>
+                    <div style={{ backgroundColor: 'white', padding: '1.25rem', borderRadius: '0.75rem', border: '1px solid var(--border-light)', position: 'relative' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Mes de Garantía</div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#f59e0b' }}>
+                        ${activeTenancy.securityDeposit ? Number(activeTenancy.securityDeposit).toLocaleString('es-CL') : '0'}
+                      </div>
+                      {activeTenancy.securityDeposit && activeTenancy.isSecurityDepositReturned && (
+                        <div style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', fontSize: '0.65rem', background: '#10b981', color: 'white', padding: '0.3rem 0.6rem', borderRadius: '0.5rem', fontWeight: 900, boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)' }}>DEVUELTO</div>
+                      )}
                     </div>
                   </div>
+
+                  {activeTenancy.securityDeposit && !activeTenancy.isSecurityDepositReturned && (
+                    <button 
+                      className="btn btn-outline" 
+                      style={{ width: '100%', marginBottom: '1.5rem', fontSize: '0.85rem', color: '#f59e0b', borderColor: '#f59e0b' }}
+                      onClick={async () => {
+                        if (window.confirm('¿Confirmas que has devuelto el mes de garantía al arrendatario?')) {
+                          try {
+                            await api.patch(`/properties/${property.id}/tenancy/${activeTenancy.id}/return-deposit`);
+                            queryClient.invalidateQueries({ queryKey: ['property', property.id] });
+                            toast.success('Garantía marcada como devuelta');
+                          } catch (e) {
+                            toast.error('Error al procesar la devolución');
+                          }
+                        }
+                      }}
+                    >
+                      ↩️ Marcar Garantía como Devuelta
+                    </button>
+                  )}
 
                   <div className="flex flex-col gap-2">
                     <RegisterPaymentForm tenancyId={activeTenancy.id} />

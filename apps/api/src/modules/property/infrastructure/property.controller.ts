@@ -138,4 +138,11 @@ export class PropertyController {
   async updatePhotosOrder(@Param('id') id: string, @Body() dto: ReorderPhotosDto) {
     await this.propertyRepo.updatePhotosOrder(id, dto.photoOrders);
   }
+
+  @Patch(':id/tenancy/:tenancyId/return-deposit')
+  @RequireRole(OrganizationRole.ADMIN, OrganizationRole.EDITOR)
+  @ApiOperation({ summary: 'Marcar el mes de garantía como devuelto' })
+  async returnDeposit(@Param('tenancyId') tenancyId: string) {
+    return this.propertyRepo.returnSecurityDeposit(tenancyId);
+  }
 }

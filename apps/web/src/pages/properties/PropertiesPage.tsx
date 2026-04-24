@@ -98,11 +98,42 @@ export default function PropertiesPage() {
           {/* Grid */}
           <div className="property-grid" style={{ marginBottom: '4rem', gap: '2rem' }}>
             {paginated.map((property) => (
-              <div key={property.id} className="card flex flex-col justify-between">
+              <div key={property.id} className="card flex flex-col justify-between" style={{ padding: 0, overflow: 'hidden' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="flex items-center justify-between" style={{ marginBottom: '1.25rem' }}>
-                    <div className="flex gap-2">
-                      <span className="badge" style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-main)' }}>
+                  {/* Vista Previa de Imagen / Placeholder */}
+                  <div style={{ width: '100%', height: '160px', position: 'relative', overflow: 'hidden', borderBottom: '1px solid var(--border-light)' }}>
+                    {property.photos && property.photos.length > 0 ? (
+                      <>
+                        <img 
+                          src={property.photos[0].url} 
+                          alt={property.address} 
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                        />
+                        <div style={{ position: 'absolute', top: '0.75rem', right: '0.75rem' }}>
+                          <span className="badge" style={{ backgroundColor: 'rgba(255,255,255,0.9)', color: 'black', fontWeight: 800, fontSize: '0.7rem', border: 'none', backdropFilter: 'blur(4px)' }}>
+                            📸 {property.photos.length}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{ 
+                        width: '100%', 
+                        height: '100%', 
+                        display: 'grid', 
+                        placeItems: 'center', 
+                        background: 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)',
+                        color: 'var(--text-muted)'
+                      }}>
+                        <div style={{ textAlign: 'center' }}>
+                           <div style={{ fontSize: '2rem', opacity: 0.5 }}>🏗️</div>
+                           <div style={{ fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sin Fotos</div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Badge Categoría & Estado Flotantes */}
+                    <div style={{ position: 'absolute', top: '0.75rem', left: '0.75rem', display: 'flex', gap: '0.5rem' }}>
+                      <span className="badge" style={{ backgroundColor: 'rgba(31, 41, 55, 0.7)', color: 'white', border: 'none', backdropFilter: 'blur(4px)', fontWeight: 700, fontSize: '0.65rem' }}>
                         {property.category === PropertyCategory.OTHER && property.customCategory 
                           ? property.customCategory 
                           : PropertyCategoryLabels[property.category]}
@@ -110,60 +141,66 @@ export default function PropertiesPage() {
                       <span 
                         className="badge"
                         style={{ 
-                          backgroundColor: property.activeTenant ? 'rgba(16, 185, 129, 0.1)' : 'var(--bg-surface)',
-                          color: property.activeTenant ? '#10b981' : 'var(--text-muted)',
-                          border: property.activeTenant ? '1px solid #10b981' : '1px solid var(--border)',
+                          backgroundColor: property.activeTenant ? 'rgba(16, 185, 129, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+                          color: property.activeTenant ? 'white' : '#6b7280',
+                          border: 'none',
+                          backdropFilter: 'blur(4px)',
+                          fontWeight: 800,
+                          fontSize: '0.65rem'
                         }}
                       >
-                        {property.activeTenant ? 'ARRENDADA' : 'DISPONIBLE'}
+                        {property.activeTenant ? 'OCUPADA' : 'DISPONIBLE'}
                       </span>
                     </div>
                   </div>
 
-                  <h3 className="font-heading" style={{ 
-                    fontSize: '1.35rem', 
-                    marginBottom: '0.75rem', 
-                    lineHeight: 1.1,
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
-                    minHeight: '3rem'
-                  }}>
-                    {property.address}
-                  </h3>
-
-                  <div className="flex flex-col gap-2" style={{ marginBottom: '1.25rem' }}>
-                    <div className="flex items-center gap-3 text-muted" style={{ fontSize: '0.75rem', fontWeight: 700 }}>
-                      <span className="flex items-center gap-1">📅 Día {property.paymentDueDay}</span>
-                      {property.rol && (
-                        <>
-                          <span style={{ opacity: 0.2 }}>|</span>
-                          <span className="flex items-center gap-1">📜 ROL {property.rol}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div 
-                    className="text-muted" 
-                    style={{ 
-                      fontSize: '0.85rem', 
-                      lineHeight: '1.5',
-                      overflow: 'hidden',
+                  <div style={{ padding: '1.5rem' }}>
+                    <h3 className="font-heading" style={{ 
+                      fontSize: '1.25rem', 
+                      marginBottom: '0.75rem', 
+                      lineHeight: 1.2,
                       display: '-webkit-box',
                       WebkitLineClamp: 2,
                       WebkitBoxOrient: 'vertical',
-                      padding: '1rem',
-                      background: 'var(--bg-main)',
-                      borderRadius: '0.75rem',
-                      border: '1px solid var(--border-light)'
-                    }}
-                    dangerouslySetInnerHTML={{ __html: property.notes || 'Sin observaciones adicionales.' }}
-                  />
+                      overflow: 'hidden',
+                      minHeight: '3rem'
+                    }}>
+                      {property.name || property.address}
+                    </h3>
+
+                    <div className="flex flex-col gap-2" style={{ marginBottom: '1.25rem' }}>
+                      <div className="flex items-center gap-3 text-muted" style={{ fontSize: '0.75rem', fontWeight: 700 }}>
+                        <span className="flex items-center gap-1">📅 Día {property.paymentDueDay}</span>
+                        {property.rol && (
+                          <>
+                            <span style={{ opacity: 0.2 }}>|</span>
+                            <span className="flex items-center gap-1">📜 ROL {property.rol}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div 
+                      className="text-muted" 
+                      style={{ 
+                        fontSize: '0.85rem', 
+                        lineHeight: '1.5',
+                        height: '3.5rem',
+                        overflow: 'hidden',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        padding: '0.75rem',
+                        background: '#f9fafb',
+                        borderRadius: '0.5rem',
+                        border: '1px solid #f1f5f9'
+                      }}
+                      dangerouslySetInnerHTML={{ __html: property.notes || 'Sin observaciones.' }}
+                    />
+                  </div>
                 </div>
 
-                <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-light)', display: 'flex', gap: '0.75rem' }}>
+                <div style={{ margin: '0 1.5rem 1.5rem 1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #f1f5f9', display: 'flex', gap: '0.75rem' }}>
                   <Link
                     to={`/properties/${property.id}`}
                     className="btn btn-outline"

@@ -93,6 +93,7 @@ export class PrismaPropertyRepository implements IPropertyRepository {
         tenantId: data.tenantId,
         startDate: new Date(data.startDate),
         monthlyRent: data.monthlyRent,
+        securityDeposit: data.securityDeposit,
         isActive: true,
       },
       include: {
@@ -143,6 +144,13 @@ export class PrismaPropertyRepository implements IPropertyRepository {
     );
   }
 
+  async returnSecurityDeposit(tenancyId: string): Promise<void> {
+    await this.prisma.propertyTenant.update({
+      where: { id: tenancyId },
+      data: { isSecurityDepositReturned: true },
+    });
+  }
+
   private mapToEntity(p: any): Property {
     return new Property(
       p.id,
@@ -172,7 +180,10 @@ export class PrismaPropertyRepository implements IPropertyRepository {
         number: m.number,
         createdAt: m.createdAt,
       })) : [],
-      p.tenants && p.tenants.length > 0 ? p.tenants[0] : null,
+      p.tenants && p.tenants.length > 0 ? {
+        ...p.tenants[0],
+        securityDeposit: p.tenants[0].securityDeposit ? Number(p.tenants[0].securityDeposit) : null,
+      } : null,
       p.photos ? p.photos.map((ph: any) => ({
         id: ph.id,
         url: ph.url,
