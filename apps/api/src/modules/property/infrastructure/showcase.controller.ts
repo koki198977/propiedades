@@ -106,7 +106,6 @@ export class ShowcaseController {
         notes: property.notes,
         expectedRent: property.expectedRent,
         photos: property.photos.map(ph => ({ url: ph.url, order: ph.order })),
-        meters: property.meters.map(m => ({ label: m.label, number: m.number }))
       }
     };
   }

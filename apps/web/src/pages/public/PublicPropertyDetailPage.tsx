@@ -150,72 +150,76 @@ export default function PublicPropertyDetailPage() {
                  </div>
               </div>
 
-              {/* Características Clave (Iconos) */}
-              <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '1rem', marginBottom: '3rem', padding: '1.5rem', backgroundColor: '#f9fafb', borderRadius: '1rem', border: '1px solid #f1f5f9' }}>
-                <div style={publicFeatureStyle}>
-                  <span style={{ fontSize: '1.5rem' }}>🛏️</span>
+              {/* Características Clave (Iconos Premium) */}
+              <div className="grid" style={{ 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', 
+                gap: '1.5rem', 
+                marginBottom: '3rem', 
+                padding: '2rem', 
+                background: 'linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%)', 
+                borderRadius: '1.25rem', 
+                border: '1px solid #e5e7eb',
+                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
+              }}>
+                <div style={{ ...publicFeatureStyle, flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '0.5rem' }}>
+                  <div style={{ width: '48px', height: '48px', backgroundColor: 'white', borderRadius: '12px', display: 'grid', placeItems: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+                    <span style={{ fontSize: '1.25rem' }}>🛏️</span>
+                  </div>
                   <div>
-                    <div style={publicFeatureLabelStyle}>Dormit.</div>
-                    <div style={publicFeatureValueStyle}>{property.bedrooms ?? '0'}</div>
+                    <div style={publicFeatureLabelStyle}>Dormitorios</div>
+                    <div style={{ ...publicFeatureValueStyle, fontSize: '1.25rem' }}>{property.bedrooms ?? '0'}</div>
                   </div>
                 </div>
-                <div style={publicFeatureStyle}>
-                  <span style={{ fontSize: '1.5rem' }}>🚿</span>
+                <div style={{ ...publicFeatureStyle, flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '0.5rem' }}>
+                  <div style={{ width: '48px', height: '48px', backgroundColor: 'white', borderRadius: '12px', display: 'grid', placeItems: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+                    <span style={{ fontSize: '1.25rem' }}>🚿</span>
+                  </div>
                   <div>
                     <div style={publicFeatureLabelStyle}>Baños</div>
-                    <div style={publicFeatureValueStyle}>{property.bathrooms ?? '0'}</div>
+                    <div style={{ ...publicFeatureValueStyle, fontSize: '1.25rem' }}>{property.bathrooms ?? '0'}</div>
                   </div>
                 </div>
-                <div style={publicFeatureStyle}>
-                  <span style={{ fontSize: '1.5rem' }}>📐</span>
+                <div style={{ ...publicFeatureStyle, flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '0.5rem' }}>
+                  <div style={{ width: '48px', height: '48px', backgroundColor: 'white', borderRadius: '12px', display: 'grid', placeItems: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+                    <span style={{ fontSize: '1.25rem' }}>📐</span>
+                  </div>
                   <div>
                     <div style={publicFeatureLabelStyle}>Superficie</div>
-                    <div style={publicFeatureValueStyle}>{property.m2Built ? `${property.m2Built} m²` : 'N/A'}</div>
+                    <div style={{ ...publicFeatureValueStyle, fontSize: '1.25rem' }}>{property.m2Built ? `${property.m2Built} m²` : '—'}</div>
                   </div>
                 </div>
-                <div style={publicFeatureStyle}>
-                  <span style={{ fontSize: '1.5rem' }}>🚗</span>
+                <div style={{ ...publicFeatureStyle, flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '0.5rem' }}>
+                  <div style={{ width: '48px', height: '48px', backgroundColor: 'white', borderRadius: '12px', display: 'grid', placeItems: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+                    <span style={{ fontSize: '1.25rem' }}>🚗</span>
+                  </div>
                   <div>
                     <div style={publicFeatureLabelStyle}>Estac.</div>
-                    <div style={publicFeatureValueStyle}>{property.hasParking ? 'Sí' : 'No'}</div>
+                    <div style={{ ...publicFeatureValueStyle, fontSize: '1.25rem' }}>{property.hasParking ? 'Sí' : 'No'}</div>
                   </div>
                 </div>
-                <div style={publicFeatureStyle}>
-                  <span style={{ fontSize: '1.5rem' }}>📦</span>
+                <div style={{ ...publicFeatureStyle, flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '0.5rem' }}>
+                  <div style={{ width: '48px', height: '48px', backgroundColor: 'white', borderRadius: '12px', display: 'grid', placeItems: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+                    <span style={{ fontSize: '1.25rem' }}>📦</span>
+                  </div>
                   <div>
                     <div style={publicFeatureLabelStyle}>Bodega</div>
-                    <div style={publicFeatureValueStyle}>{property.hasStorage ? 'Sí' : 'No'}</div>
+                    <div style={{ ...publicFeatureValueStyle, fontSize: '1.25rem' }}>{property.hasStorage ? 'Sí' : 'No'}</div>
                   </div>
                 </div>
               </div>
 
-              <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '2rem' }}>
-                <h3 className="font-heading" style={{ fontSize: '1.5rem', marginBottom: '1.25rem' }}>Descripción</h3>
+              <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '2.5rem' }}>
+                <h3 className="font-heading" style={{ fontSize: '1.75rem', marginBottom: '1.5rem', fontWeight: 800 }}>Descripción</h3>
                 {property.notes ? (
                   <div 
-                    style={{ fontSize: '1.1rem', lineHeight: 1.8, color: '#374151' }} 
+                    style={{ fontSize: '1.15rem', lineHeight: 1.8, color: '#4b5563', letterSpacing: '-0.01em' }} 
                     className="rich-text-content"
                     dangerouslySetInnerHTML={{ __html: property.notes }}
                   />
                 ) : (
-                  <p className="text-muted" style={{ fontStyle: 'italic' }}>Sin descripción detallada disponible.</p>
+                  <p className="text-muted" style={{ fontStyle: 'italic', fontSize: '1.1rem' }}>Sin descripción detallada por el momento.</p>
                 )}
               </div>
-
-              {/* Technical features / Meters */}
-              {property.meters && property.meters.length > 0 && (
-                <div style={{ marginTop: '3rem', borderTop: '1px solid var(--border-light)', paddingTop: '2rem' }}>
-                   <h3 className="font-heading" style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>Especificaciones</h3>
-                   <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
-                      {property.meters.map((m: any, i: number) => (
-                        <div key={i} style={{ padding: '1.25rem', backgroundColor: 'var(--bg-surface)', borderRadius: '1rem', border: '1px solid var(--border-light)' }}>
-                           <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.25rem' }}>{m.label}</div>
-                           <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{m.number}</div>
-                        </div>
-                      ))}
-                   </div>
-                </div>
-              )}
             </div>
           </div>
 

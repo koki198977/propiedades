@@ -58,19 +58,33 @@ export default function ShowcasePage() {
   }
 
   return (
-    <div style={{ backgroundColor: '#f9fafb', minHeight: '100vh' }}>
-      {/* Header Showcase */}
-      <header style={{ backgroundColor: 'white', borderBottom: '1px solid var(--border)', padding: '2.5rem 1rem', textAlign: 'center' }}>
+    <div style={{ backgroundColor: '#f3f4f6', minHeight: '100vh' }}>
+      {/* Header Showcase Premium */}
+      <header style={{ 
+        background: 'linear-gradient(to bottom, #ffffff 0%, #f9fafb 100%)', 
+        borderBottom: '1px solid #e5e7eb', 
+        padding: '3rem 1rem', 
+        textAlign: 'center',
+        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
+      }}>
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
           <img 
             src="/logo.png?v=3" 
             alt="Logo" 
-            style={{ height: '80px', width: 'auto', marginBottom: '1rem', objectFit: 'contain' }} 
+            style={{ height: '80px', width: 'auto', marginBottom: '1.5rem', objectFit: 'contain' }} 
           />
-          <h1 style={{ fontSize: '2.25rem', fontWeight: 900, fontFamily: 'var(--font-heading)', color: 'var(--text-main)', marginBottom: '0.5rem', letterSpacing: '-0.02em' }}>
-            Propiedades de {owner?.name || 'Administrador'}
+          <h1 style={{ 
+            fontSize: '2.5rem', 
+            fontWeight: 900, 
+            fontFamily: 'var(--font-heading)', 
+            color: '#111827', 
+            marginBottom: '0.5rem', 
+            letterSpacing: '-0.03em',
+            lineHeight: 1.1
+          }}>
+             Explora las propiedades de {owner?.name || 'Administrador'}
           </h1>
-          <p className="text-muted" style={{ fontSize: '1.1rem', fontWeight: 500 }}>Explora nuestras unidades exclusivas disponibles para arriendo.</p>
+          <p className="text-muted" style={{ fontSize: '1.1rem', fontWeight: 500, color: '#6b7280' }}>Unidades exclusivas seleccionadas para su próximo hogar.</p>
         </div>
       </header>
 
@@ -86,10 +100,21 @@ export default function ShowcasePage() {
                 className="card-link"
                 style={{ textDecoration: 'none', color: 'inherit' }}
               >
-                <div className="card showcase-card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}>
+                <div className="card showcase-card" style={{ 
+                  padding: 0, 
+                  borderRadius: '1.5rem',
+                  overflow: 'hidden', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  height: '100%', 
+                  border: '1px solid #e5e7eb',
+                  boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)',
+                  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                  backgroundColor: 'white'
+                }}>
                   
                   {/* Cuadro de imagen */}
-                  <div style={{ width: '100%', height: '240px', backgroundColor: 'var(--bg-surface)', position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ width: '100%', height: '240px', backgroundColor: '#f3f4f6', position: 'relative', overflow: 'hidden' }}>
                     {property.photos && property.photos.length > 0 ? (
                       <img 
                         src={property.photos[0].url} 
@@ -98,54 +123,98 @@ export default function ShowcasePage() {
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
                     ) : (
-                      <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center' }}>
-                        <span className="text-muted">Sin Foto</span>
+                      <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', backgroundColor: '#f9fafb' }}>
+                        <span style={{ fontSize: '3rem' }}>🏢</span>
+                        <span className="text-muted" style={{ fontWeight: 600, fontSize: '0.8rem' }}>SIN FOTOGRAFÍAS</span>
                       </div>
                     )}
                     
                     {/* Badge Categoría */}
-                    <div style={{ position: 'absolute', top: '1rem', left: '1rem' }}>
-                      <span className="badge" style={{ backgroundColor: 'rgba(255,255,255,0.9)', color: 'black', fontWeight: 700, padding: '0.4rem 0.8rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', backdropFilter: 'blur(4px)' }}>
+                    <div style={{ position: 'absolute', top: '1.25rem', left: '1.25rem' }}>
+                      <span className="badge" style={{ 
+                        backgroundColor: 'rgba(255,255,255,0.95)', 
+                        color: '#111827', 
+                        fontWeight: 800, 
+                        padding: '0.5rem 1rem', 
+                        borderRadius: '0.75rem',
+                        boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', 
+                        backdropFilter: 'blur(8px)',
+                        fontSize: '0.7rem',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                      }}>
                         {property.category === PropertyCategory.OTHER && property.customCategory
                           ? property.customCategory
                           : (PropertyCategoryLabels[property.category as PropertyCategory] || 'Propiedad')}
                       </span>
                     </div>
 
-                    <div style={{ position: 'absolute', bottom: '1rem', right: '1rem' }}>
-                       <span style={{ backgroundColor: 'var(--primary)', color: 'white', padding: '0.3rem 0.6rem', borderRadius: '0.5rem', fontSize: '0.7rem', fontWeight: 800 }}>PRO</span>
+                    <div style={{ position: 'absolute', bottom: '1.25rem', right: '1.25rem' }}>
+                       <span style={{ 
+                         background: 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)', 
+                         color: 'white', 
+                         padding: '0.4rem 0.8rem', 
+                         borderRadius: '0.75rem', 
+                         fontSize: '0.65rem', 
+                         fontWeight: 900,
+                         boxShadow: '0 4px 6px rgba(99, 102, 241, 0.3)'
+                       }}>VERIFICADA</span>
                     </div>
                   </div>
 
                   {/* Detalles */}
-                  <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <div className="text-muted" style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Arriendo Mensual</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--primary)', marginBottom: '0.5rem' }}>
-                      {typeof property.expectedRent === 'number' ? `$${property.expectedRent.toLocaleString('es-CL')}` : 'Consultar'}
+                  <div style={{ padding: '2rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ marginBottom: '1.25rem' }}>
+                      <div className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem', color: '#6b7280' }}>Arriendo Mensual</div>
+                      <div style={{ fontSize: '1.75rem', fontWeight: 950, color: '#4f46e5', letterSpacing: '-0.02em' }}>
+                        {typeof property.expectedRent === 'number' ? `$${property.expectedRent.toLocaleString('es-CL')}` : 'Consultar'}
+                      </div>
                     </div>
 
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '1rem', lineHeight: '1.3' }}>
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#111827', marginBottom: '1rem', lineHeight: '1.2', flex: 1 }}>
                       {property.address}
                     </h3>
                     
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-                       <span>📍 Ubicación estelar</span>
-                       <span>✨ Lista para habitar</span>
+                    <div style={{ fontSize: '0.9rem', color: '#6b7280', display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem', fontWeight: 500 }}>
+                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>📍 Zona Estratégica</span>
+                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>✨ Equipada</span>
                     </div>
 
                     {/* Acciones */}
-                    <div style={{ marginTop: 'auto', display: 'flex', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', gap: '0.75rem', marginTop: 'auto' }}>
                       <div 
-                        style={{ flex: 1, padding: '0.75rem', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border)', borderRadius: '0.5rem', fontWeight: 700, textAlign: 'center', fontSize: '0.85rem' }}
+                        style={{ 
+                          flex: 1, 
+                          padding: '0.85rem', 
+                          backgroundColor: '#f9fafb', 
+                          border: '1px solid #e5e7eb', 
+                          borderRadius: '1rem', 
+                          fontWeight: 800, 
+                          textAlign: 'center', 
+                          fontSize: '0.9rem',
+                          color: '#374151'
+                        }}
                       >
                          Ver Detalles
                       </div>
                       <button 
                         onClick={(e) => handleContact(e, property)}
-                        style={{ width: '50px', height: '45px', backgroundColor: '#25D366', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-                        title="Contactar por WhatsApp"
+                        style={{ 
+                          width: '54px', 
+                          height: '48px', 
+                          backgroundColor: '#22c55e', 
+                          color: 'white', 
+                          border: 'none', 
+                          borderRadius: '1rem', 
+                          cursor: 'pointer', 
+                          display: 'flex', 
+                          justifyContent: 'center', 
+                          alignItems: 'center',
+                          boxShadow: '0 4px 6px rgba(34, 197, 94, 0.2)'
+                        }}
+                        title="WhatsApp"
                       >
-                        <span style={{ fontSize: '1.2rem' }}>💬</span>
+                        <span style={{ fontSize: '1.25rem' }}>💬</span>
                       </button>
                     </div>
                   </div>
