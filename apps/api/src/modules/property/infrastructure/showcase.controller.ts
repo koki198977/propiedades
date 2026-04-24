@@ -62,7 +62,7 @@ export class ShowcaseController {
       properties: properties.map(p => ({
         id: p.id,
         category: p.category,
-        address: p.address,
+        address: p.name || 'Propiedad sin nombre', // Usamos el nombre descriptivo como "dirección pública"
         notes: p.notes,
         expectedRent: p.expectedRent,
         photos: p.photos.map(ph => ({ url: ph.url, order: ph.order }))
@@ -96,7 +96,7 @@ export class ShowcaseController {
       property: {
         id: property.id,
         category: property.category,
-        address: property.address,
+        address: property.name || 'Propiedad sin nombre', // Título público
         city: property.city,
         bedrooms: property.bedrooms,
         bathrooms: property.bathrooms,

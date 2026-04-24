@@ -83,21 +83,33 @@ export default function CreatePropertyPage() {
           {/* Sección 1: Ubicación y Tipo */}
           <div>
             <p style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--primary)', marginBottom: '1.25rem' }}>1. Ubicación y Tipo</p>
-            <div className="grid" style={{ gridTemplateColumns: '1.5fr 1fr', gap: '1.5rem' }}>
-              <div className="flex flex-col gap-2">
-                <label style={{ fontSize: '0.875rem', fontWeight: 600 }}>Dirección</label>
+             <div className="flex flex-col gap-2" style={{ marginBottom: '1.5rem' }}>
+                <label style={{ fontSize: '0.875rem', fontWeight: 600 }}>Nombre de la Propiedad (Título Público)</label>
                 <input
-                  {...register('address')}
+                  {...register('name')}
                   type="text"
-                  placeholder="Ej: Av. Providencia 1234"
-                  style={{ ...inputStyle, border: `1px solid ${errors.address ? 'var(--danger)' : 'var(--border)'}` }}
+                  placeholder="Ej: Departamento 404 Plaza"
+                  style={inputStyle}
                 />
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Este es el nombre que se mostrará públicamente en la vitrina.</span>
               </div>
-              <div className="flex flex-col gap-2">
-                <label style={{ fontSize: '0.875rem', fontWeight: 600 }}>Ciudad / Comuna</label>
-                <input {...register('city')} type="text" placeholder="Ej: Santiago" style={inputStyle} />
+
+              <div className="grid" style={{ gridTemplateColumns: '1.5fr 1fr', gap: '1.5rem' }}>
+                <div className="flex flex-col gap-2">
+                  <label style={{ fontSize: '0.875rem', fontWeight: 600 }}>Dirección Exacta (Privada)</label>
+                  <input
+                    {...register('address')}
+                    type="text"
+                    placeholder="Ej: Av. Providencia 1234, Depto 404"
+                    style={{ ...inputStyle, border: `1px solid ${errors.address ? 'var(--danger)' : 'var(--border)'}` }}
+                  />
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>La dirección no se muestra en la vitrina pública.</span>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label style={{ fontSize: '0.875rem', fontWeight: 600 }}>Ciudad / Comuna</label>
+                  <input {...register('city')} type="text" placeholder="Ej: Santiago" style={inputStyle} />
+                </div>
               </div>
-            </div>
             
             <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginTop: '1.5rem' }}>
               <div className="flex flex-col gap-2">

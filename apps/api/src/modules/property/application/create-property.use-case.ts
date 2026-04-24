@@ -13,6 +13,7 @@ export class CreatePropertyUseCase {
       userId,
       organizationId,
       address: dto.address,
+      name: dto.name ?? null,
       city: dto.city ?? null,
       category: dto.category,
       customCategory: dto.customCategory ?? null,

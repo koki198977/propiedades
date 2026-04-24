@@ -20,6 +20,7 @@ export class UpdatePropertyUseCase {
 
     const updateData: any = {
       address: dto.address,
+      name: dto.name,
       city: dto.city,
       category: dto.category,
       customCategory: dto.customCategory,

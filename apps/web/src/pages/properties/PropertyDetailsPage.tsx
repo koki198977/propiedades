@@ -306,8 +306,8 @@ export default function PropertyDetailsPage() {
                 </div>
                 {!isEditingProperty && (
                   <>
-                    <h2 className="font-heading" style={{ fontSize: '2.5rem', marginBottom: '0.25rem' }}>{property.address}</h2>
-                    {property.city && <p className="text-muted" style={{ fontWeight: 600 }}>{property.city}</p>}
+                    <h2 className="font-heading" style={{ fontSize: '2.5rem', marginBottom: '0.25rem' }}>{property.name || property.address}</h2>
+                    <p className="text-muted" style={{ fontWeight: 600, fontSize: '1.1rem' }}>{property.address} {property.city ? `• ${property.city}` : ''}</p>
                   </>
                 )}
               </div>
@@ -862,6 +862,7 @@ function EditPropertyForm({ property, onDone }: { property: PropertyDto, onDone:
   const { register, handleSubmit, watch, control } = useForm<UpdatePropertyDto>({
     defaultValues: {
       address: property.address,
+      name: property.name || '',
       city: property.city || '',
       category: property.category,
       customCategory: property.customCategory || '',
@@ -947,10 +948,16 @@ function EditPropertyForm({ property, onDone }: { property: PropertyDto, onDone:
         </button>
       </div>
 
+      {/* Identificación */}
+      <div className="flex flex-col gap-2">
+        <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Nombre de la Propiedad (Título Público)</label>
+        <input {...register('name')} placeholder="Ej: Departamento 404 Plaza" style={inputStyle} />
+      </div>
+
       {/* Ubicacion */}
       <div className="grid" style={{ gridTemplateColumns: '2fr 1fr', gap: '1rem' }}>
         <div className="flex flex-col gap-2">
-          <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Dirección</label>
+          <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Dirección Exacta (Privada)</label>
           <input {...register('address')} style={inputStyle} />
         </div>
         <div className="flex flex-col gap-2">

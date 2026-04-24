@@ -100,6 +100,7 @@ export interface UpdateMemberRoleDto {
 export interface CreatePropertyDto {
   category: PropertyCategory
   customCategory?: string    // Libre cuando category = 'OTHER'
+  name?: string
   address: string
   city?: string
   bedrooms?: number
@@ -148,6 +149,7 @@ export interface PropertyDto {
   id: string
   category: PropertyCategory
   customCategory?: string | null
+  name?: string | null
   address: string
   city?: string | null
   bedrooms?: number | null

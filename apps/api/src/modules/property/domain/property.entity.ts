@@ -7,6 +7,7 @@ export class Property {
     public readonly organizationId: string, // Workspace dueño
     public readonly category: PropertyCategory,
     public readonly customCategory: string | null = null,
+    public readonly name: string | null = null,
     public readonly address: string,
     public readonly city: string | null = null,
     public readonly bedrooms: number | null = null,
@@ -43,6 +44,7 @@ export class Property {
     organizationId: string;
     category: PropertyCategory;
     customCategory?: string;
+    name?: string;
     address: string;
     city?: string;
     bedrooms?: number;
@@ -62,6 +64,7 @@ export class Property {
       organizationId: params.organizationId,
       category: params.category,
       customCategory: params.customCategory,
+      name: params.name,
       address: params.address,
       city: params.city,
       bedrooms: params.bedrooms,

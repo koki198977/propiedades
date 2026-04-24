@@ -150,6 +150,7 @@ export class PrismaPropertyRepository implements IPropertyRepository {
       p.organizationId,
       p.category,
       p.customCategory,
+      p.name,
       p.address,
       p.city,
       p.bedrooms,

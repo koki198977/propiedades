@@ -134,6 +134,7 @@ model Property {
   userId          String           // Creator
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   category        PropertyCategory
+  name            String?
   address         String
   city            String?
   bedrooms        Int?
