@@ -101,6 +101,13 @@ export interface CreatePropertyDto {
   category: PropertyCategory
   customCategory?: string    // Libre cuando category = 'OTHER'
   address: string
+  city?: string
+  bedrooms?: number
+  bathrooms?: number
+  m2Total?: number
+  m2Built?: number
+  hasParking?: boolean
+  hasStorage?: boolean
   rol?: string               // ROL de Avalúo SII
   contractEndDate?: string   // ISO date
   paymentDueDay: number      // 1–31
@@ -142,6 +149,13 @@ export interface PropertyDto {
   category: PropertyCategory
   customCategory?: string | null
   address: string
+  city?: string | null
+  bedrooms?: number | null
+  bathrooms?: number | null
+  m2Total?: number | null
+  m2Built?: number | null
+  hasParking: boolean
+  hasStorage: boolean
   rol?: string
   contractEndDate?: string
   paymentDueDay: number
@@ -246,6 +260,7 @@ export interface TenantDto {
   email?: string
   phone?: string
   documentId?: string
+  isActive: boolean
   createdAt: string
 }
 

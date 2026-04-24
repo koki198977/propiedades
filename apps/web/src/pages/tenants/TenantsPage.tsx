@@ -86,7 +86,7 @@ export default function TenantsPage() {
                 </tr>
               </thead>
               <tbody>
-                {tenants.map((tenant) => (
+                {tenants.filter(t => t.isActive !== false).map((tenant) => (
                   <tr key={tenant.id} style={{ borderTop: '1px solid var(--border-light)' }}>
                     <td style={{ padding: '1.25rem 1.5rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tenant.name}</td>
                     <td style={{ padding: '1.25rem 1.5rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tenant.documentId || '-'}</td>

@@ -30,16 +30,16 @@ export default function TenantDetailPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
-      toast.success('Arrendatario eliminado correctamente.');
+      toast.success('Arrendatario removido con éxito (archivado para reportes históricos).');
       navigate('/tenants');
     },
     onError: () => {
-      toast.error('Error al eliminar el arrendatario.');
+      toast.error('Error al remover el arrendatario.');
     },
   });
 
   const handleDelete = () => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar este arrendatario? Esta acción no se puede deshacer.')) {
+    if (window.confirm('¿Estás seguro de que deseas eliminar este arrendatario? Se ocultará de la lista pero sus pagos registrados se mantendrán para tus informes históricos.')) {
       deleteTenant();
     }
   };

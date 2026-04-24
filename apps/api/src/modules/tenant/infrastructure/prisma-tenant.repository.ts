@@ -9,7 +9,10 @@ export class PrismaTenantRepository implements ITenantRepository {
 
   async findAllByOrganizationId(organizationId: string): Promise<Tenant[]> {
     const tenants = await this.prisma.tenant.findMany({
-      where: { organizationId },
+      where: { 
+        organizationId,
+        isActive: true 
+      },
       orderBy: { name: 'asc' },
     });
     return tenants.map(t => this.mapToEntity(t));
@@ -61,14 +64,17 @@ export class PrismaTenantRepository implements ITenantRepository {
         email: data.email,
         phone: data.phone,
         documentId: data.documentId,
+        isActive: data.isActive,
       },
     });
     return this.mapToEntity(tenant);
   }
 
   async delete(id: string): Promise<void> {
-    await this.prisma.tenant.delete({
+    // Soft delete para no romper integridad financiera
+    await this.prisma.tenant.update({
       where: { id },
+      data: { isActive: false },
     });
   }
 
@@ -81,6 +87,7 @@ export class PrismaTenantRepository implements ITenantRepository {
       t.email,
       t.phone,
       t.documentId,
+      t.isActive,
       t.createdAt,
       t.updatedAt,
     );

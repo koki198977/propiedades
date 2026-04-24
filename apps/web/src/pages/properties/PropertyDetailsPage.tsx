@@ -47,6 +47,30 @@ const paymentSchema = z.object({
   notes: z.string().optional(),
 });
 
+const featureBoxStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.75rem',
+  padding: '1rem',
+  backgroundColor: 'var(--bg-surface)',
+  borderRadius: '0.75rem',
+  border: '1px solid var(--border-light)',
+};
+
+const featureLabelStyle = {
+  fontSize: '0.65rem',
+  fontWeight: 700,
+  textTransform: 'uppercase' as const,
+  color: 'var(--text-muted)',
+  letterSpacing: '0.05em',
+};
+
+const featureValueStyle = {
+  fontSize: '1rem',
+  fontWeight: 700,
+  color: 'var(--text-main)',
+};
+
 // --- Main Component ---
 export default function PropertyDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -280,7 +304,12 @@ export default function PropertyDetailsPage() {
                     {property.activeTenant ? 'ARRENDADA' : 'DISPONIBLE'}
                   </span>
                 </div>
-                {!isEditingProperty && <h2 className="font-heading" style={{ fontSize: '2.5rem' }}>{property.address}</h2>}
+                {!isEditingProperty && (
+                  <>
+                    <h2 className="font-heading" style={{ fontSize: '2.5rem', marginBottom: '0.25rem' }}>{property.address}</h2>
+                    {property.city && <p className="text-muted" style={{ fontWeight: 600 }}>{property.city}</p>}
+                  </>
+                )}
               </div>
               <button 
                 onClick={() => setIsEditingProperty(!isEditingProperty)} 
@@ -296,6 +325,45 @@ export default function PropertyDetailsPage() {
               </div>
             ) : (
               <>
+                {/* Características Principales (Iconos) */}
+                <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem', marginBottom: '2.5rem' }}>
+                  <div style={featureBoxStyle}>
+                    <span style={{ fontSize: '1.5rem' }}>🛏️</span>
+                    <div>
+                      <div style={featureLabelStyle}>Dormitorios</div>
+                      <div style={featureValueStyle}>{property.bedrooms ?? '0'}</div>
+                    </div>
+                  </div>
+                  <div style={featureBoxStyle}>
+                    <span style={{ fontSize: '1.5rem' }}>🚿</span>
+                    <div>
+                      <div style={featureLabelStyle}>Baños</div>
+                      <div style={featureValueStyle}>{property.bathrooms ?? '0'}</div>
+                    </div>
+                  </div>
+                  <div style={featureBoxStyle}>
+                    <span style={{ fontSize: '1.5rem' }}>📐</span>
+                    <div>
+                      <div style={featureLabelStyle}>m² Útiles</div>
+                      <div style={featureValueStyle}>{property.m2Built ? `${property.m2Built} m²` : 'N/A'}</div>
+                    </div>
+                  </div>
+                  <div style={featureBoxStyle}>
+                    <span style={{ fontSize: '1.5rem' }}>🚗</span>
+                    <div>
+                      <div style={featureLabelStyle}>Estacionamiento</div>
+                      <div style={featureValueStyle}>{property.hasParking ? 'Sí' : 'No'}</div>
+                    </div>
+                  </div>
+                  <div style={featureBoxStyle}>
+                    <span style={{ fontSize: '1.5rem' }}>📦</span>
+                    <div>
+                      <div style={featureLabelStyle}>Bodega</div>
+                      <div style={featureValueStyle}>{property.hasStorage ? 'Sí' : 'No'}</div>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
                   <div>
                     <h4 style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>Día de Pago</h4>
@@ -321,6 +389,12 @@ export default function PropertyDetailsPage() {
                     <div style={{ padding: '0.75rem 1rem', background: 'var(--bg-surface)', borderRadius: '0.75rem', display: 'flex', gap: '0.75rem', alignItems: 'center', border: '1px solid var(--border-light)' }}>
                       <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Precio Esperado</span>
                       <span style={{ fontWeight: 600, color: 'var(--primary)' }}>${Number(property.expectedRent).toLocaleString('es-CL')}</span>
+                    </div>
+                  )}
+                  {property.m2Total && (
+                    <div style={{ padding: '0.75rem 1rem', background: 'var(--bg-surface)', borderRadius: '0.75rem', display: 'flex', gap: '0.75rem', alignItems: 'center', border: '1px solid var(--border-light)' }}>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Superficie Total</span>
+                      <span style={{ fontWeight: 600 }}>{property.m2Total} m²</span>
                     </div>
                   )}
                 </div>
@@ -788,8 +862,15 @@ function EditPropertyForm({ property, onDone }: { property: PropertyDto, onDone:
   const { register, handleSubmit, watch, control } = useForm<UpdatePropertyDto>({
     defaultValues: {
       address: property.address,
+      city: property.city || '',
       category: property.category,
       customCategory: property.customCategory || '',
+      bedrooms: property.bedrooms ?? 0,
+      bathrooms: property.bathrooms ?? 0,
+      m2Total: property.m2Total ?? 0,
+      m2Built: property.m2Built ?? 0,
+      hasParking: property.hasParking,
+      hasStorage: property.hasStorage,
       paymentDueDay: property.paymentDueDay,
       rol: property.rol ?? '',
       notes: property.notes ?? '',
@@ -846,7 +927,7 @@ function EditPropertyForm({ property, onDone }: { property: PropertyDto, onDone:
   };
 
   return (
-    <form onSubmit={handleSubmit((data) => mutate(data))} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit((data) => mutate(data))} className="flex flex-col gap-6">
       <div className="flex justify-between items-center" style={{ marginBottom: '0.5rem' }}>
         <p style={{ fontSize: '1rem', fontWeight: 700 }}>Editar Propiedad</p>
         <button 
@@ -865,10 +946,50 @@ function EditPropertyForm({ property, onDone }: { property: PropertyDto, onDone:
           {deleteMutation.isPending ? 'Eliminando...' : '🗑️ Eliminar Propiedad'}
         </button>
       </div>
-      <div className="flex flex-col gap-2">
-        <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Dirección</label>
-        <input {...register('address')} style={inputStyle} />
+
+      {/* Ubicacion */}
+      <div className="grid" style={{ gridTemplateColumns: '2fr 1fr', gap: '1rem' }}>
+        <div className="flex flex-col gap-2">
+          <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Dirección</label>
+          <input {...register('address')} style={inputStyle} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Ciudad</label>
+          <input {...register('city')} style={inputStyle} />
+        </div>
       </div>
+
+      {/* Specs tecnicas */}
+      <div className="grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+        <div className="flex flex-col gap-2">
+          <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Dormit.</label>
+          <input {...register('bedrooms', { valueAsNumber: true })} type="number" style={inputStyle} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Baños</label>
+          <input {...register('bathrooms', { valueAsNumber: true })} type="number" style={inputStyle} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>m2 Útiles</label>
+          <input {...register('m2Built', { valueAsNumber: true })} type="number" step="0.1" style={inputStyle} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>m2 Totales</label>
+          <input {...register('m2Total', { valueAsNumber: true })} type="number" step="0.1" style={inputStyle} />
+        </div>
+      </div>
+
+      <div className="flex gap-8">
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem' }}>
+          <input type="checkbox" {...register('hasParking')} style={{ width: '18px', height: '18px' }} />
+          <span>Estacionamiento</span>
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem' }}>
+          <input type="checkbox" {...register('hasStorage')} style={{ width: '18px', height: '18px' }} />
+          <span>Bodega</span>
+        </label>
+      </div>
+
       <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
         <div className="flex flex-col gap-2">
           <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Día de Pago</label>
@@ -929,7 +1050,7 @@ function EditPropertyForm({ property, onDone }: { property: PropertyDto, onDone:
         </div>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2" style={{ marginTop: '1rem' }}>
         <button type="button" onClick={onDone} className="btn btn-outline" style={{ flex: 1 }}>Cancelar</button>
         <button disabled={isPending} className="btn btn-primary" style={{ flex: 2 }}>{isPending ? 'Guardando...' : 'Guardar Cambios'}</button>
       </div>

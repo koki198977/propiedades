@@ -4,6 +4,26 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import { PropertyCategoryLabels, PropertyCategory } from '@propiedades/types';
 
+const publicFeatureStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.75rem',
+};
+
+const publicFeatureLabelStyle = {
+  fontSize: '0.65rem',
+  fontWeight: 700,
+  textTransform: 'uppercase' as const,
+  color: '#6b7280',
+  letterSpacing: '0.05em',
+};
+
+const publicFeatureValueStyle = {
+  fontSize: '1rem',
+  fontWeight: 800,
+  color: '#111827',
+};
+
 export default function PublicPropertyDetailPage() {
   const { userId, propertyId } = useParams<{ userId: string; propertyId: string }>();
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
@@ -119,10 +139,54 @@ export default function PublicPropertyDetailPage() {
             {/* Content Details */}
             <div className="card" style={{ padding: '2rem' }}>
               <div style={{ marginBottom: '2rem' }}>
-                 <h1 className="font-heading" style={{ fontSize: '2.5rem', marginBottom: '0.5rem', lineHeight: '1.1' }}>{property.address}</h1>
+                 <div className="flex justify-between items-start">
+                    <div>
+                      <h1 className="font-heading" style={{ fontSize: '2.5rem', marginBottom: '0.25rem', lineHeight: '1.1' }}>{property.address}</h1>
+                      {property.city && <p className="text-muted" style={{ fontWeight: 600, fontSize: '1.2rem', marginBottom: '1rem' }}>{property.city}</p>}
+                    </div>
+                 </div>
                  <div className="text-muted" style={{ fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <span style={{ color: 'var(--primary)', fontWeight: 700 }}>●</span> Disponible para arriendo inmediato
                  </div>
+              </div>
+
+              {/* Características Clave (Iconos) */}
+              <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '1rem', marginBottom: '3rem', padding: '1.5rem', backgroundColor: '#f9fafb', borderRadius: '1rem', border: '1px solid #f1f5f9' }}>
+                <div style={publicFeatureStyle}>
+                  <span style={{ fontSize: '1.5rem' }}>🛏️</span>
+                  <div>
+                    <div style={publicFeatureLabelStyle}>Dormit.</div>
+                    <div style={publicFeatureValueStyle}>{property.bedrooms ?? '0'}</div>
+                  </div>
+                </div>
+                <div style={publicFeatureStyle}>
+                  <span style={{ fontSize: '1.5rem' }}>🚿</span>
+                  <div>
+                    <div style={publicFeatureLabelStyle}>Baños</div>
+                    <div style={publicFeatureValueStyle}>{property.bathrooms ?? '0'}</div>
+                  </div>
+                </div>
+                <div style={publicFeatureStyle}>
+                  <span style={{ fontSize: '1.5rem' }}>📐</span>
+                  <div>
+                    <div style={publicFeatureLabelStyle}>Superficie</div>
+                    <div style={publicFeatureValueStyle}>{property.m2Built ? `${property.m2Built} m²` : 'N/A'}</div>
+                  </div>
+                </div>
+                <div style={publicFeatureStyle}>
+                  <span style={{ fontSize: '1.5rem' }}>🚗</span>
+                  <div>
+                    <div style={publicFeatureLabelStyle}>Estac.</div>
+                    <div style={publicFeatureValueStyle}>{property.hasParking ? 'Sí' : 'No'}</div>
+                  </div>
+                </div>
+                <div style={publicFeatureStyle}>
+                  <span style={{ fontSize: '1.5rem' }}>📦</span>
+                  <div>
+                    <div style={publicFeatureLabelStyle}>Bodega</div>
+                    <div style={publicFeatureValueStyle}>{property.hasStorage ? 'Sí' : 'No'}</div>
+                  </div>
+                </div>
               </div>
 
               <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '2rem' }}>

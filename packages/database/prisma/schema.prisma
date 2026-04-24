@@ -135,6 +135,13 @@ model Property {
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   category        PropertyCategory
   address         String
+  city            String?
+  bedrooms        Int?
+  bathrooms       Int?
+  m2Total         Float?
+  m2Built         Float?
+  hasParking      Boolean          @default(false)
+  hasStorage      Boolean          @default(false)
   rol             String?          // ROL de Avalúo SII (ej: 1234-56)
   contractEndDate DateTime?
   paymentDueDay   Int              // 1–31
@@ -225,6 +232,7 @@ model Tenant {
   email          String?
   phone          String?
   documentId     String?  // RUT / DNI
+  isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -238,9 +246,9 @@ model Tenant {
 model PropertyTenant {
   id          String    @id @default(uuid())
   propertyId  String
-  property    Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  property    Property  @relation(fields: [propertyId], references: [id], onDelete: Restrict)
   tenantId    String
-  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   startDate   DateTime
   endDate     DateTime? // null = ocupación activa
   monthlyRent Decimal   @db.Decimal(12, 2)
@@ -259,7 +267,7 @@ model PropertyTenant {
 model Payment {
   id               String         @id @default(uuid())
   propertyTenantId String
-  propertyTenant   PropertyTenant @relation(fields: [propertyTenantId], references: [id], onDelete: Cascade)
+  propertyTenant   PropertyTenant @relation(fields: [propertyTenantId], references: [id], onDelete: Restrict)
   recordedById     String
   recordedBy       User           @relation("RecordedBy", fields: [recordedById], references: [id])
   amount           Decimal        @db.Decimal(12, 2)
