@@ -168,6 +168,7 @@ export interface PropertyDto {
   updatedAt: string
   photos: PropertyPhotoDto[]
   activeTenant?: PropertyTenantDto | null
+  pendingSecurityDeposits?: PropertyTenantDto[]
 }
 
 export interface PropertySummaryDto {

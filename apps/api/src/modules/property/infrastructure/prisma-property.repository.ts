@@ -16,9 +16,8 @@ export class PrismaPropertyRepository implements IPropertyRepository {
           orderBy: { order: 'asc' },
         },
         tenants: {
-          where: { isActive: true },
           include: { tenant: true },
-          take: 1,
+          orderBy: { createdAt: 'desc' },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -151,6 +150,20 @@ export class PrismaPropertyRepository implements IPropertyRepository {
     });
   }
 
+  async updateSecurityDeposit(tenancyId: string, amount: number): Promise<void> {
+    await this.prisma.propertyTenant.update({
+      where: { id: tenancyId },
+      data: { securityDeposit: amount },
+    });
+  }
+
+  async terminateTenancy(tenancyId: string): Promise<void> {
+    await this.prisma.propertyTenant.update({
+      where: { id: tenancyId },
+      data: { isActive: false, endDate: new Date() },
+    });
+  }
+
   private mapToEntity(p: any): Property {
     return new Property(
       p.id,
@@ -180,10 +193,16 @@ export class PrismaPropertyRepository implements IPropertyRepository {
         number: m.number,
         createdAt: m.createdAt,
       })) : [],
-      p.tenants && p.tenants.length > 0 ? {
-        ...p.tenants[0],
-        securityDeposit: p.tenants[0].securityDeposit ? Number(p.tenants[0].securityDeposit) : null,
+      p.tenants && p.tenants.find((t: any) => t.isActive) ? {
+        ...(p.tenants.find((t: any) => t.isActive)),
+        securityDeposit: p.tenants.find((t: any) => t.isActive).securityDeposit ? Number(p.tenants.find((t: any) => t.isActive).securityDeposit) : null,
       } : null,
+      p.tenants ? p.tenants
+        .filter((t: any) => !t.isActive && t.securityDeposit > 0 && !t.isSecurityDepositReturned)
+        .map((t: any) => ({
+          ...t,
+          securityDeposit: Number(t.securityDeposit)
+        })) : [],
       p.photos ? p.photos.map((ph: any) => ({
         id: ph.id,
         url: ph.url,

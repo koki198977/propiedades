@@ -418,6 +418,50 @@ export default function PropertyDetailsPage() {
           {/* Left Column: Utilities & Meters */}
           <div className="flex flex-col gap-8">
             {/* Utilities Section */}
+            {/* [NEW] Pending Garanties Section */}
+            {property.pendingSecurityDeposits && property.pendingSecurityDeposits.length > 0 && (
+              <div className="card" style={{ border: '2px solid #f59e0b', backgroundColor: '#fffbeb', marginBottom: '2rem' }}>
+                <h3 className="font-heading" style={{ fontSize: '1.25rem', marginBottom: '1.5rem', color: '#b45309', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  ⚠️ Garantías Pendientes de Devolución
+                </h3>
+                <div className="flex flex-col gap-4">
+                  {property.pendingSecurityDeposits.map(tenancy => (
+                    <div key={tenancy.id} style={{ background: 'white', padding: '1.25rem', borderRadius: '0.75rem', border: '1px solid #fde68a' }}>
+                      <div className="flex justify-between items-center" style={{ marginBottom: '1rem' }}>
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: '0.9rem' }}>{tenancy.tenant.name}</div>
+                          <div className="text-muted" style={{ fontSize: '0.7rem' }}>Contrato finalizado</div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontWeight: 900, color: '#f59e0b' }}>
+                            ${Number(tenancy.securityDeposit).toLocaleString('es-CL')}
+                          </div>
+                        </div>
+                      </div>
+                      <button 
+                        className="btn btn-primary" 
+                        style={{ width: '100%', padding: '0.5rem', fontSize: '0.75rem', backgroundColor: '#f59e0b', border: 'none' }}
+                        onClick={async () => {
+                          if (window.confirm(`¿Confirmas que has devuelto la garantía de $${Number(tenancy.securityDeposit).toLocaleString('es-CL')} a ${tenancy.tenant.name}?`)) {
+                            try {
+                              await api.patch(`/properties/${property.id}/tenancy/${tenancy.id}/return-deposit`);
+                              queryClient.invalidateQueries({ queryKey: ['property', property.id] });
+                              toast.success('Garantía marcada como devuelta');
+                            } catch (e) {
+                              toast.error('Error al procesar la devolución');
+                            }
+                          }
+                        }}
+                      >
+                        Marcar como DEVUELTA
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Utilities Section */}
             <div className="card">
               <div className="flex justify-between items-center" style={{ marginBottom: '2rem' }}>
                 <h3 className="font-heading" style={{ fontSize: '1.5rem' }}>Servicios y Gastos</h3>
@@ -507,6 +551,25 @@ export default function PropertyDetailsPage() {
                       <div style={{ fontWeight: 600 }}>{activeTenancy.tenant.name}</div>
                       <div className="text-muted" style={{ fontSize: '0.75rem' }}>{activeTenancy.tenant.email || 'Sin email'}</div>
                     </div>
+                    <div style={{ marginLeft: 'auto' }}>
+                      <button 
+                        className="btn btn-outline" 
+                        style={{ fontSize: '0.65rem', padding: '0.3rem 0.6rem', color: 'var(--danger)', borderColor: 'var(--danger)', opacity: 0.8 }}
+                        onClick={async () => {
+                          if (window.confirm('¿Estás seguro de que deseas FINALIZAR el contrato de este arrendatario? La propiedad volverá a estar disponible.')) {
+                            try {
+                              await api.patch(`/properties/${property.id}/tenancy/${activeTenancy.id}/terminate`);
+                              queryClient.invalidateQueries({ queryKey: ['property', property.id] });
+                              toast.success('Contrato finalizado con éxito');
+                            } catch (e) {
+                              toast.error('Error al finalizar el contrato');
+                            }
+                          }
+                        }}
+                      >
+                        ⚠️ Terminar Contrato
+                      </button>
+                    </div>
                   </div>
                   
                   <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
@@ -517,7 +580,31 @@ export default function PropertyDetailsPage() {
                       </div>
                     </div>
                     <div style={{ backgroundColor: 'white', padding: '1.25rem', borderRadius: '0.75rem', border: '1px solid var(--border-light)', position: 'relative' }}>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Mes de Garantía</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Mes de Garantía</span>
+                        {!activeTenancy.isSecurityDepositReturned && (
+                          <button 
+                            onClick={async () => {
+                              const val = window.prompt('Ingrese el monto de la garantía:', activeTenancy.securityDeposit?.toString() || '0');
+                              if (val !== null) {
+                                const amount = Number(val);
+                                if (!isNaN(amount)) {
+                                  try {
+                                    await api.patch(`/properties/${property.id}/tenancy/${activeTenancy.id}/security-deposit`, { amount });
+                                    queryClient.invalidateQueries({ queryKey: ['property', property.id] });
+                                    toast.success('Garantía actualizada');
+                                  } catch (e) {
+                                    toast.error('Error al actualizar garantía');
+                                  }
+                                }
+                              }
+                            }}
+                            style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.65rem', fontWeight: 800, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+                          >
+                            {activeTenancy.securityDeposit ? 'EDITAR' : 'REGISTRAR'}
+                          </button>
+                        )}
+                      </div>
                       <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#f59e0b' }}>
                         ${activeTenancy.securityDeposit ? Number(activeTenancy.securityDeposit).toLocaleString('es-CL') : '0'}
                       </div>

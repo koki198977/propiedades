@@ -145,4 +145,18 @@ export class PropertyController {
   async returnDeposit(@Param('tenancyId') tenancyId: string) {
     return this.propertyRepo.returnSecurityDeposit(tenancyId);
   }
+
+  @Patch(':id/tenancy/:tenancyId/security-deposit')
+  @RequireRole(OrganizationRole.ADMIN, OrganizationRole.EDITOR)
+  @ApiOperation({ summary: 'Actualizar el monto del mes de garantía' })
+  async updateSecurityDeposit(@Param('tenancyId') tenancyId: string, @Body('amount') amount: number) {
+    return this.propertyRepo.updateSecurityDeposit(tenancyId, amount);
+  }
+
+  @Patch(':id/tenancy/:tenancyId/terminate')
+  @RequireRole(OrganizationRole.ADMIN, OrganizationRole.EDITOR)
+  @ApiOperation({ summary: 'Finalizar el contrato de arriendo actual' })
+  async terminateTenancy(@Param('tenancyId') tenancyId: string) {
+    return this.propertyRepo.terminateTenancy(tenancyId);
+  }
 }

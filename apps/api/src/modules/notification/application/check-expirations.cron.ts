@@ -38,7 +38,7 @@ export class CheckExpirationsCron {
         userId: property.userId,
         type: NotificationType.EXPIRATION,
         title: 'Contrato Próximo a Vencer',
-        message: `El contrato de la propiedad en ${property.address} vence el ${property.contractEndDate?.toLocaleDateString()}.`,
+        message: `El contrato de la propiedad en ${property.address} vence el ${property.contractEndDate?.toLocaleDateString('es-CL')}.`,
       });
     }
     

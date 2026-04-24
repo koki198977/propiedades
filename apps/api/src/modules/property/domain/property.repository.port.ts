@@ -9,6 +9,8 @@ export interface IPropertyRepository {
   delete(id: string): Promise<void>;
   assignTenant(propertyId: string, data: any): Promise<any>;
   returnSecurityDeposit(tenancyId: string): Promise<void>;
+  updateSecurityDeposit(tenancyId: string, amount: number): Promise<void>;
+  terminateTenancy(tenancyId: string): Promise<void>;
 }
 
 export const PROPERTY_REPOSITORY = Symbol('IPropertyRepository');
