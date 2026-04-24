@@ -5,6 +5,7 @@ import { OrganizationGuard } from '../../../shared/infrastructure/guards/organiz
 import { RequireRole } from '../../../shared/infrastructure/decorators/require-role.decorator';
 import { CreateUtilityUseCase } from '../application/create-utility.use-case';
 import { GetUtilitiesUseCase } from '../application/get-utilities.use-case';
+import { DeleteUtilityUseCase } from '../application/delete-utility.use-case';
 import { CreateExpenseReminderUseCase } from '../application/create-expense-reminder.use-case';
 import { GetExpenseRemindersUseCase } from '../application/get-expense-reminders.use-case';
 import { DeleteExpenseReminderUseCase } from '../application/delete-expense-reminder.use-case';
@@ -19,6 +20,7 @@ export class UtilityController {
   constructor(
     private readonly createUtilityUseCase: CreateUtilityUseCase,
     private readonly getUtilitiesUseCase: GetUtilitiesUseCase,
+    private readonly deleteUtilityUseCase: DeleteUtilityUseCase,
     private readonly createReminderUseCase: CreateExpenseReminderUseCase,
     private readonly getRemindersUseCase: GetExpenseRemindersUseCase,
     private readonly deleteReminderUseCase: DeleteExpenseReminderUseCase,
@@ -42,6 +44,13 @@ export class UtilityController {
   @ApiOperation({ summary: 'Listar gastos por propiedad' })
   async findAll(@Param('propertyId') propertyId: string) {
     return this.getUtilitiesUseCase.execute(propertyId);
+  }
+
+  @Delete(':id')
+  @RequireRole(OrganizationRole.ADMIN)
+  @ApiOperation({ summary: 'Eliminar un gasto registrado' })
+  async delete(@Param('id') id: string) {
+    return this.deleteUtilityUseCase.execute(id);
   }
 
   // --- Reminders ---
@@ -69,7 +78,6 @@ export class UtilityController {
   @RequireRole(OrganizationRole.ADMIN)
   @ApiOperation({ summary: 'Eliminar un recordatorio' })
   async deleteReminder(@Param('id') id: string) {
-    // Note: Future security check: verify reminder belongs to organization
     return this.deleteReminderUseCase.execute(id);
   }
 

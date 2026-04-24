@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { UtilityController } from './utility.controller';
 import { CreateUtilityUseCase } from '../application/create-utility.use-case';
 import { GetUtilitiesUseCase } from '../application/get-utilities.use-case';
+import { DeleteUtilityUseCase } from '../application/delete-utility.use-case';
 import { CreateExpenseReminderUseCase } from '../application/create-expense-reminder.use-case';
 import { GetExpenseRemindersUseCase } from '../application/get-expense-reminders.use-case';
 import { DeleteExpenseReminderUseCase } from '../application/delete-expense-reminder.use-case';
@@ -14,6 +15,7 @@ import { PrismaUtilityRepository } from './prisma-utility.repository';
   providers: [
     CreateUtilityUseCase,
     GetUtilitiesUseCase,
+    DeleteUtilityUseCase,
     CreateExpenseReminderUseCase,
     GetExpenseRemindersUseCase,
     DeleteExpenseReminderUseCase,

@@ -22,7 +22,9 @@ import {
   ExpenseFrequencyLabels,
   ExpenseReminderDto,
   CreateExpenseReminderDto,
+  OrganizationRole,
 } from '@propiedades/types';
+import { useOrganization } from '../../providers/OrganizationProvider';
 import api from '@/api/axios';
 import { useState, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
@@ -49,6 +51,7 @@ const paymentSchema = z.object({
 export default function PropertyDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { activeOrganization } = useOrganization();
   const [activeTab, setActiveTab] = useState<'detalle' | 'gestion'>(searchParams.get('manage') === 'true' ? 'gestion' : 'detalle');
   const [isAddingUtility, setIsAddingUtility] = useState(false);
   const [isEditingProperty, setIsEditingProperty] = useState(false);
@@ -68,6 +71,9 @@ export default function PropertyDetailsPage() {
       return prev;
     });
   };
+
+  // Roles verification
+  const isAdmin = activeOrganization?.role === OrganizationRole.ADMIN || (localStorage.getItem('user') && JSON.parse(localStorage.getItem('user')!).role === 'SUPER_ADMIN');
 
   // Queries
   const { data: property, isLoading: isLoadingProp } = useQuery<PropertyDto>({
@@ -95,6 +101,17 @@ export default function PropertyDetailsPage() {
   });
 
   const queryClient = useQueryClient();
+
+  const deleteUtilityMutation = useMutation({
+    mutationFn: async (utilityId: string) => {
+      await api.delete(`/utilities/${utilityId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['utilities', id] });
+      toast.success('Gasto eliminado');
+    },
+    onError: () => toast.error('Error al eliminar el gasto'),
+  });
 
   const uploadPhotoMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -366,6 +383,21 @@ export default function PropertyDetailsPage() {
                         <span style={{ fontWeight: 700, fontSize: '1.125rem' }}>
                           ${Number(util.amount).toLocaleString('es-CL')}
                         </span>
+                        {isAdmin && (
+                          <button 
+                            onClick={() => {
+                              if (window.confirm('¿Eliminar este gasto permanentemente?')) {
+                                deleteUtilityMutation.mutate(util.id);
+                              }
+                            }}
+                            className="btn btn-icon"
+                            style={{ padding: '0.25rem', color: 'var(--danger)', opacity: 0.6, cursor: 'pointer', background: 'none', border: 'none' }}
+                            onMouseOver={(e) => e.currentTarget.style.opacity = '1'}
+                            onMouseOut={(e) => e.currentTarget.style.opacity = '0.6'}
+                          >
+                            🗑
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
