@@ -20,14 +20,25 @@ export class UpdatePropertyUseCase {
 
     const updateData: any = {
       address: dto.address,
+      city: dto.city,
       category: dto.category,
+      customCategory: dto.customCategory,
+      bedrooms: dto.bedrooms,
+      bathrooms: dto.bathrooms,
+      m2Total: dto.m2Total,
+      m2Built: dto.m2Built,
+      hasParking: dto.hasParking,
+      hasStorage: dto.hasStorage,
       paymentDueDay: dto.paymentDueDay,
       rol: dto.rol,
       notes: dto.notes,
+      expectedRent: dto.expectedRent,
     };
 
     if (dto.contractEndDate) {
       updateData.contractEndDate = new Date(dto.contractEndDate);
+    } else if (dto.contractEndDate === '') {
+      updateData.contractEndDate = null;
     }
 
     return this.propertyRepo.update(id, updateData);
