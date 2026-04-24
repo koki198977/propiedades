@@ -63,6 +63,7 @@ export interface OrganizationDto {
   bankAccountNumber?: string
   bankAccountRut?: string
   bankAccountEmail?: string
+  role?: OrganizationRole
   createdAt: string
 }
 

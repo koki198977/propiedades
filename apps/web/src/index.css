@@ -392,3 +392,40 @@ h1, h2, h3, h4, .font-heading {
   .show-on-mobile { display: flex !important; }
   .container { padding: 0 1rem; }
 }
+
+/* --- Showcase Premium Styles --- */
+.showcase-card {
+  cursor: pointer;
+  border: 1px solid rgba(0,0,0,0.05) !important;
+}
+
+.showcase-card:hover {
+  transform: translateY(-8px) scale(1.01) !important;
+  box-shadow: 0 30px 60px -12px rgba(0,0,0,0.12) !important;
+}
+
+.card-img-zoom {
+  transition: transform 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.showcase-card:hover .card-img-zoom {
+  transform: scale(1.1);
+}
+
+.rich-text-content ul, .rich-text-content ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.rich-text-content p {
+  margin-bottom: 0.75rem;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease forwards;
+}

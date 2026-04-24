@@ -17,6 +17,7 @@ import DashboardPage from './pages/DashboardPage';
 import ChatWidget from './components/ai/ChatWidget';
 import NotificationCenter from './components/notifications/NotificationCenter';
 import ShowcasePage from './pages/public/ShowcasePage';
+import PublicPropertyDetailPage from './pages/public/PublicPropertyDetailPage';
 import OrganizationSwitcher from './components/OrganizationSwitcher';
 import GodModePage from './pages/admin/GodModePage';
 import { UserRole } from '@propiedades/types';
@@ -196,6 +197,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/showcase/:userId" element={<ShowcasePage />} />
+          <Route path="/showcase/:userId/property/:propertyId" element={<PublicPropertyDetailPage />} />
           
           {/* Protected Routes */}
           <Route path="/dashboard" element={<DashboardPage />} />

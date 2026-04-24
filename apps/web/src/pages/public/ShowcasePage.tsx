@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import { PropertyCategoryLabels, PropertyCategory } from '@propiedades/types';
@@ -28,9 +28,10 @@ export default function ShowcasePage() {
     return properties.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   }, [properties, page]);
 
-  const handleContact = (property: any) => {
+  const handleContact = (e: React.MouseEvent, property: any) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (!owner) return;
-    // Generar mensaje de WhatsApp pre-rellenado
     const message = `Hola ${owner.name}, me interesa la propiedad "${property.address}" que tienes disponible. ¿Me podrías dar más información?`;
     const encoded = encodeURIComponent(message);
     window.open(`https://wa.me/${owner.whatsapp?.replace(/\+/g, '') || ''}?text=${encoded}`, '_blank');
@@ -64,15 +65,12 @@ export default function ShowcasePage() {
           <img 
             src="/logo.png?v=3" 
             alt="Logo" 
-            style={{ height: '120px', width: 'auto', marginBottom: '1rem', objectFit: 'contain' }} 
+            style={{ height: '80px', width: 'auto', marginBottom: '1rem', objectFit: 'contain' }} 
           />
-          <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'var(--primary)', color: 'white', display: 'grid', placeItems: 'center', fontSize: '1.5rem', fontWeight: 700, margin: '0 auto 1rem auto' }}>
-            {owner?.name ? owner.name.charAt(0).toUpperCase() : '?'}
-          </div>
-          <h1 style={{ fontSize: '2rem', fontFamily: 'var(--font-heading)', color: 'var(--text-main)', marginBottom: '0.5rem' }}>
+          <h1 style={{ fontSize: '2.25rem', fontWeight: 900, fontFamily: 'var(--font-heading)', color: 'var(--text-main)', marginBottom: '0.5rem', letterSpacing: '-0.02em' }}>
             Propiedades de {owner?.name || 'Administrador'}
           </h1>
-          <p className="text-muted" style={{ fontSize: '1.1rem' }}>Vitrina de inmuebles actualmente disponibles para arriendo.</p>
+          <p className="text-muted" style={{ fontSize: '1.1rem', fontWeight: 500 }}>Explora nuestras unidades exclusivas disponibles para arriendo.</p>
         </div>
       </header>
 
@@ -82,67 +80,77 @@ export default function ShowcasePage() {
           <>
             <div className="property-grid" style={{ gap: '2rem' }}>
               {paginatedProperties.map((property: any) => (
-              <div key={property.id} className="card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                
-                {/* Cuadro de imagen */}
-                <div style={{ width: '100%', height: '240px', backgroundColor: 'var(--bg-surface)', position: 'relative' }}>
-                  {property.photos && property.photos.length > 0 ? (
-                    <img 
-                      src={property.photos[0].url} 
-                      alt={property.address}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                  ) : (
-                    <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center' }}>
-                      <span className="text-muted">Sin Foto</span>
+              <Link 
+                key={property.id} 
+                to={`/showcase/${userId}/property/${property.id}`}
+                className="card-link"
+                style={{ textDecoration: 'none', color: 'inherit' }}
+              >
+                <div className="card showcase-card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}>
+                  
+                  {/* Cuadro de imagen */}
+                  <div style={{ width: '100%', height: '240px', backgroundColor: 'var(--bg-surface)', position: 'relative', overflow: 'hidden' }}>
+                    {property.photos && property.photos.length > 0 ? (
+                      <img 
+                        src={property.photos[0].url} 
+                        alt={property.address}
+                        className="card-img-zoom"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center' }}>
+                        <span className="text-muted">Sin Foto</span>
+                      </div>
+                    )}
+                    
+                    {/* Badge Categoría */}
+                    <div style={{ position: 'absolute', top: '1rem', left: '1rem' }}>
+                      <span className="badge" style={{ backgroundColor: 'rgba(255,255,255,0.9)', color: 'black', fontWeight: 700, padding: '0.4rem 0.8rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', backdropFilter: 'blur(4px)' }}>
+                        {property.category === PropertyCategory.OTHER && property.customCategory
+                          ? property.customCategory
+                          : (PropertyCategoryLabels[property.category as PropertyCategory] || 'Propiedad')}
+                      </span>
                     </div>
-                  )}
-                  
-                  {/* Badge Categoría */}
-                  <div style={{ position: 'absolute', top: '1rem', left: '1rem' }}>
-                    <span className="badge" style={{ backgroundColor: 'white', color: 'black', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                      {property.category === PropertyCategory.OTHER && property.customCategory
-                        ? property.customCategory
-                        : (PropertyCategoryLabels[property.category as PropertyCategory] || 'Propiedad')}
-                    </span>
+
+                    <div style={{ position: 'absolute', bottom: '1rem', right: '1rem' }}>
+                       <span style={{ backgroundColor: 'var(--primary)', color: 'white', padding: '0.3rem 0.6rem', borderRadius: '0.5rem', fontSize: '0.7rem', fontWeight: 800 }}>PRO</span>
+                    </div>
+                  </div>
+
+                  {/* Detalles */}
+                  <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <div className="text-muted" style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Arriendo Mensual</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--primary)', marginBottom: '0.5rem' }}>
+                      {typeof property.expectedRent === 'number' ? `$${property.expectedRent.toLocaleString('es-CL')}` : 'Consultar'}
+                    </div>
+
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '1rem', lineHeight: '1.3' }}>
+                      {property.address}
+                    </h3>
+                    
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+                       <span>📍 Ubicación estelar</span>
+                       <span>✨ Lista para habitar</span>
+                    </div>
+
+                    {/* Acciones */}
+                    <div style={{ marginTop: 'auto', display: 'flex', gap: '0.5rem' }}>
+                      <div 
+                        style={{ flex: 1, padding: '0.75rem', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border)', borderRadius: '0.5rem', fontWeight: 700, textAlign: 'center', fontSize: '0.85rem' }}
+                      >
+                         Ver Detalles
+                      </div>
+                      <button 
+                        onClick={(e) => handleContact(e, property)}
+                        style={{ width: '50px', height: '45px', backgroundColor: '#25D366', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+                        title="Contactar por WhatsApp"
+                      >
+                        <span style={{ fontSize: '1.2rem' }}>💬</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
-
-                {/* Detalles */}
-                <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem', lineHeight: '1.3' }}>
-                    {property.address}
-                  </h3>
-                  
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)', marginBottom: '1rem' }}>
-                    {typeof property.expectedRent === 'number' ? `$${property.expectedRent.toLocaleString('es-CL')}` : 'Consultar Valor'}
-                  </div>
-
-                  {property.notes && (
-                    <div 
-                      className="text-muted" 
-                      style={{ 
-                        fontSize: '0.85rem', 
-                        marginBottom: '1.5rem', 
-                        flex: 1,
-                        maxHeight: '4.5rem',
-                        overflow: 'hidden'
-                      }}
-                      dangerouslySetInnerHTML={{ __html: property.notes }}
-                    />
-                  )}
-
-                  {/* Acciones */}
-                  <div style={{ marginTop: 'auto' }}>
-                    <button 
-                      onClick={() => handleContact(property)}
-                      style={{ width: '100%', padding: '0.75rem', backgroundColor: '#25D366', color: 'white', border: 'none', borderRadius: '0.5rem', fontWeight: 600, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}
-                    >
-                      <span>💬</span> Contactar Propietario
-                    </button>
-                  </div>
-                </div>
-              </div>
+              </Link>
             ))}
           </div>
 

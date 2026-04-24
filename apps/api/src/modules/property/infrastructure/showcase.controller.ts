@@ -2,9 +2,6 @@ import { Controller, Get, Param, Inject, NotFoundException } from '@nestjs/commo
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { IPropertyRepository, PROPERTY_REPOSITORY } from '../domain/property.repository.port';
 
-// Interfaz para la dependencia del usuario (asumimos que existe un tenant repository interno pero Prisma directo funciona mejor para leer un dato público si lo inyectamos)
-// Para simplificar y hacerlo limpio, vamos a consultar los datos públicos mediante el PropertyRepository.
-
 @ApiTags('Showcase')
 @Controller('showcase')
 export class ShowcaseController {
@@ -15,8 +12,6 @@ export class ShowcaseController {
   @Get(':userId')
   @ApiOperation({ summary: 'Obtener propiedades disponibles públicas de un usuario' })
   async getPublicShowcase(@Param('userId') userId: string) {
-    // 1. Obtener el usuario (sólo nombre y email o contacto público)
-    // Para simplificar usamos la base de datos de Prisma que está anexada al repositorio
     const user = await this.propertyRepo.prisma.user.findUnique({
       where: { id: userId },
       select: { fullName: true, email: true },
@@ -26,17 +21,14 @@ export class ShowcaseController {
       throw new NotFoundException('Usuario no encontrado');
     }
 
-    // 2. Obtener los IDs y nombres de las organizaciones donde el usuario es miembro
     const memberships = await this.propertyRepo.prisma.organizationMember.findMany({
       where: { userId },
       include: { organization: true }
     });
     const organizationIds = memberships.map(m => m.organizationId);
     
-    // Usar el nombre de la primera organización si existe, de lo contrario el nombre del usuario
     const displayName = memberships.length > 0 ? memberships[0].organization.name : user.fullName;
 
-    // 3. Obtener propiedades disponibles
     const properties = await this.propertyRepo.prisma.property.findMany({
       where: { 
         OR: [
@@ -61,7 +53,6 @@ export class ShowcaseController {
       orderBy: { createdAt: 'desc' }
     });
 
-    // 4. Mapear los datos públicos
     return {
       owner: {
         name: displayName,
@@ -76,6 +67,41 @@ export class ShowcaseController {
         expectedRent: p.expectedRent,
         photos: p.photos.map(ph => ({ url: ph.url, order: ph.order }))
       }))
+    };
+  }
+
+  @Get(':userId/property/:propertyId')
+  @ApiOperation({ summary: 'Obtener detalles públicos de una propiedad específica' })
+  async getPublicPropertyDetail(@Param('userId') userId: string, @Param('propertyId') propertyId: string) {
+    const property = await this.propertyRepo.prisma.property.findUnique({
+      where: { id: propertyId },
+      include: {
+        photos: { orderBy: { order: 'asc' } },
+        meters: true,
+        user: { select: { fullName: true, email: true } },
+        organization: true,
+      },
+    });
+
+    if (!property) {
+      throw new NotFoundException('Propiedad no encontrada');
+    }
+
+    return {
+      owner: {
+        name: property.organization?.name || property.user.fullName,
+        email: property.user.email,
+        whatsapp: '+56900000000'
+      },
+      property: {
+        id: property.id,
+        category: property.category,
+        address: property.address,
+        notes: property.notes,
+        expectedRent: property.expectedRent,
+        photos: property.photos.map(ph => ({ url: ph.url, order: ph.order })),
+        meters: property.meters.map(m => ({ label: m.label, number: m.number }))
+      }
     };
   }
 }
