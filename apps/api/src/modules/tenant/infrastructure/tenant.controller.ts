@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Request, Query, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../shared/infrastructure/guards/jwt-auth.guard';
 import { OrganizationGuard } from '../../../shared/infrastructure/guards/organization.guard';
@@ -8,7 +8,7 @@ import { GetTenantsUseCase } from '../application/get-tenants.use-case';
 import { GetTenantByIdUseCase } from '../application/get-tenant-by-id.use-case';
 import { UpdateTenantUseCase } from '../application/update-tenant.use-case';
 import { DeleteTenantUseCase } from '../application/delete-tenant.use-case';
-import { CreateTenantDto, UpdateTenantDto, OrganizationRole } from '@propiedades/types';
+import { CreateTenantDto, UpdateTenantDto, OrganizationRole, PaginationQuery } from '@propiedades/types';
 
 @ApiTags('Tenants')
 @ApiBearerAuth()
@@ -32,8 +32,8 @@ export class TenantController {
 
   @Get()
   @ApiOperation({ summary: 'Listar arrendatarios de mi organización' })
-  async findAll(@Request() req: any) {
-    return this.getTenantsUseCase.execute(req.organizationId);
+  async findAll(@Request() req: any, @Query() query: PaginationQuery) {
+    return this.getTenantsUseCase.execute(req.organizationId, query);
   }
 
   @Get(':id')

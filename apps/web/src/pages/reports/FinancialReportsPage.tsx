@@ -137,12 +137,80 @@ function DataTable<T extends { id: string | number; date: string; amount: number
   );
 }
 
+function WithdrawalModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
+  const [amount, setAmount] = useState('');
+  const [description, setDescription] = useState('Retiro de Dinero');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!amount) return;
+    
+    setIsSubmitting(true);
+    try {
+      await api.post('/utilities/expenses', {
+        amount: Number(amount),
+        date: new Date().toISOString(),
+        category: 'Retiro',
+        description: description,
+      });
+      onClose();
+      window.location.reload();
+    } catch (e) {
+      alert('Error al registrar retiro');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content animate-slide-up" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', padding: '2rem' }}>
+        <h2 className="font-heading" style={{ marginBottom: '1.5rem', fontSize: '1.5rem' }}>💸 Registrar Retiro</h2>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Monto del Retiro ($)</label>
+            <input 
+              type="number" 
+              required 
+              autoFocus
+              value={amount}
+              onChange={e => setAmount(e.target.value)}
+              placeholder="Ej: 100000"
+              style={{ padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', fontSize: '1rem' }}
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Descripción / Motivo</label>
+            <input 
+              type="text" 
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              style={{ padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', fontSize: '0.9rem' }}
+            />
+          </div>
+          <div className="flex gap-3 mt-4">
+            <button type="button" onClick={onClose} className="btn btn-outline" style={{ flex: 1 }}>Cancelar</button>
+            <button type="submit" disabled={isSubmitting} className="btn btn-primary" style={{ flex: 1 }}>
+              {isSubmitting ? 'Procesando...' : 'Confirmar Retiro'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function FinancialReportsPage() {
   const [dateRange, setDateRange] = useState<'today' | 'week' | 'month' | 'year' | 'all' | 'custom'>('month');
   const [customRange, setCustomRange] = useState({
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0],
   });
+
+  const [isWithdrawalModalOpen, setIsWithdrawalModalOpen] = useState(false);
 
   const getQueryParams = () => {
     const today = new Date();
@@ -196,6 +264,21 @@ export default function FinancialReportsPage() {
               : 'Balance detallado de ingresos y egresos por periodo.'}
           </p>
         </div>
+
+        <div className="flex gap-4">
+          <button 
+            onClick={() => setIsWithdrawalModalOpen(true)}
+            className="btn btn-outline"
+            style={{ padding: '0.75rem 1.5rem', borderRadius: '0.75rem', borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 700 }}
+          >
+            💸 Registrar Retiro de Dinero
+          </button>
+        </div>
+
+        <WithdrawalModal 
+          isOpen={isWithdrawalModalOpen} 
+          onClose={() => setIsWithdrawalModalOpen(false)} 
+        />
 
         <div className="flex gap-2 p-1 glass" style={{ borderRadius: '0.75rem' }}>
           {(['today', 'week', 'month', 'year', 'all', 'custom'] as const).map(range => (
@@ -303,12 +386,12 @@ export default function FinancialReportsPage() {
                       </div>
                     ) : (
                       <>
-                        <div style={{ fontWeight: 600 }}>{UtilityTypeLabels[item.type as UtilityType]}</div>
+                        <div style={{ fontWeight: 600 }}>{UtilityTypeLabels[item.type as UtilityType] || 'Gasto'}</div>
                         {item.description && <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{item.description}</div>}
                       </>
                     )}
                   </td>
-                  <td style={{ padding: '1rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>{item.propertyAddress.split(',')[0]}</td>
+                  <td style={{ padding: '1rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>{item.propertyAddress?.split(',')[0] || 'General'}</td>
                   <td style={{ padding: '1rem', fontSize: '0.875rem', fontWeight: 700, textAlign: 'right', color: 'var(--danger)' }}>
                     ${item.amount.toLocaleString('es-CL')}
                   </td>
@@ -328,12 +411,12 @@ export default function FinancialReportsPage() {
                       <div style={{ fontWeight: 600 }}>{item.description || 'Gastos de Propiedad'}</div>
                     ) : (
                       <>
-                        <div style={{ fontWeight: 600 }}>{UtilityTypeLabels[item.type as UtilityType]}</div>
+                        <div style={{ fontWeight: 600 }}>{UtilityTypeLabels[item.type as UtilityType] || 'Costo'}</div>
                         {item.description && <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{item.description}</div>}
                       </>
                     )}
                   </td>
-                  <td style={{ padding: '1rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>{item.propertyAddress.split(',')[0]}</td>
+                  <td style={{ padding: '1rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>{item.propertyAddress?.split(',')[0] || 'General'}</td>
                   <td style={{ padding: '1rem', fontSize: '0.875rem', fontWeight: 700, textAlign: 'right' }}>
                     ${item.amount.toLocaleString('es-CL')}
                   </td>

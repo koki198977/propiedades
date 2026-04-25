@@ -2,20 +2,50 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../shared/infrastructure/prisma.service';
 import { ITenantRepository } from '../domain/tenant.repository.port';
 import { Tenant } from '../domain/tenant.entity';
+import { PaginationQuery, PaginatedResponse } from '@propiedades/types';
 
 @Injectable()
 export class PrismaTenantRepository implements ITenantRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAllByOrganizationId(organizationId: string): Promise<Tenant[]> {
-    const tenants = await this.prisma.tenant.findMany({
-      where: { 
-        organizationId,
-        isActive: true 
+  async findAllByOrganizationId(organizationId: string, query?: PaginationQuery): Promise<PaginatedResponse<Tenant>> {
+    const page = Number(query?.page) || 1;
+    const limit = Number(query?.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const [tenants, total] = await Promise.all([
+      this.prisma.tenant.findMany({
+        where: { 
+          organizationId,
+          isActive: true 
+        },
+        include: {
+          properties: {
+            where: { isActive: true },
+            include: { property: true }
+          }
+        },
+        orderBy: { name: 'asc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.tenant.count({
+        where: { 
+          organizationId,
+          isActive: true 
+        },
+      }),
+    ]);
+
+    return {
+      data: tenants.map(t => this.mapToEntity(t)),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
       },
-      orderBy: { name: 'asc' },
-    });
-    return tenants.map(t => this.mapToEntity(t));
+    };
   }
 
   async findById(id: string): Promise<Tenant | null> {
@@ -79,6 +109,10 @@ export class PrismaTenantRepository implements ITenantRepository {
   }
 
   private mapToEntity(t: any): Tenant {
+    const activeProperty = t.properties && t.properties.length > 0 
+      ? { id: t.properties[0].property.id, address: t.properties[0].property.address } 
+      : null;
+
     return new Tenant(
       t.id,
       t.userId,
@@ -90,6 +124,7 @@ export class PrismaTenantRepository implements ITenantRepository {
       t.isActive,
       t.createdAt,
       t.updatedAt,
+      activeProperty
     );
   }
 }

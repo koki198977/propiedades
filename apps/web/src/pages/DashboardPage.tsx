@@ -60,6 +60,7 @@ export default function DashboardPage() {
           <p className="text-muted" style={{ fontSize: '1rem' }}>Visión analítica de tu portafolio inmobiliario</p>
         </div>
         <div className="hide-on-mobile flex gap-3">
+           <Link to="/finances" className="btn btn-outline" style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}>💸 Retiro de Dinero</Link>
            <Link to="/properties/new" className="btn btn-primary">+ Nueva Propiedad</Link>
         </div>
       </div>

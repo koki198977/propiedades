@@ -265,6 +265,7 @@ export interface TenantDto {
   documentId?: string
   isActive: boolean
   createdAt: string
+  currentProperty?: { id: string; address: string } | null
 }
 
 // ============================================================
@@ -274,6 +275,7 @@ export interface TenantDto {
 export interface AssignTenantDto {
   tenantId: string
   startDate: string        // ISO date
+  endDate?: string         // ISO date
   monthlyRent: number
   securityDeposit?: number
 }

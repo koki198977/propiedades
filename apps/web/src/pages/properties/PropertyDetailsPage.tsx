@@ -80,6 +80,7 @@ export default function PropertyDetailsPage() {
   const [isAddingUtility, setIsAddingUtility] = useState(false);
   const [isEditingProperty, setIsEditingProperty] = useState(false);
   const [isAssigningTenant, setIsAssigningTenant] = useState(false);
+  const [isEditDepositOpen, setIsEditDepositOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -584,26 +585,19 @@ export default function PropertyDetailsPage() {
                         <span>Mes de Garantía</span>
                         {!activeTenancy.isSecurityDepositReturned && (
                           <button 
-                            onClick={async () => {
-                              const val = window.prompt('Ingrese el monto de la garantía:', activeTenancy.securityDeposit?.toString() || '0');
-                              if (val !== null) {
-                                const amount = Number(val);
-                                if (!isNaN(amount)) {
-                                  try {
-                                    await api.patch(`/properties/${property.id}/tenancy/${activeTenancy.id}/security-deposit`, { amount });
-                                    queryClient.invalidateQueries({ queryKey: ['property', property.id] });
-                                    toast.success('Garantía actualizada');
-                                  } catch (e) {
-                                    toast.error('Error al actualizar garantía');
-                                  }
-                                }
-                              }
-                            }}
+                            onClick={() => setIsEditDepositOpen(true)}
                             style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.65rem', fontWeight: 800, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
                           >
                             {activeTenancy.securityDeposit ? 'EDITAR' : 'REGISTRAR'}
                           </button>
                         )}
+                        <SecurityDepositModal 
+                          isOpen={isEditDepositOpen}
+                          onClose={() => setIsEditDepositOpen(false)}
+                          initialAmount={activeTenancy.securityDeposit ? Number(activeTenancy.securityDeposit) : 0}
+                          propertyId={property.id}
+                          tenancyId={activeTenancy.id}
+                        />
                       </div>
                       <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#f59e0b' }}>
                         ${activeTenancy.securityDeposit ? Number(activeTenancy.securityDeposit).toLocaleString('es-CL') : '0'}
@@ -611,6 +605,23 @@ export default function PropertyDetailsPage() {
                       {activeTenancy.securityDeposit && activeTenancy.isSecurityDepositReturned && (
                         <div style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', fontSize: '0.65rem', background: '#10b981', color: 'white', padding: '0.3rem 0.6rem', borderRadius: '0.5rem', fontWeight: 900, boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)' }}>DEVUELTO</div>
                       )}
+                    </div>
+                  </div>
+
+                  <div className="card" style={{ marginBottom: '1.5rem', background: '#fafafa', border: '1px dashed var(--border)' }}>
+                    <div className="flex justify-between items-center" style={{ marginBottom: '0.5rem' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Vigencia Contrato</span>
+                      {activeTenancy.endDate && <span className="badge badge-outline" style={{ fontSize: '0.6rem' }}>AÑO CORRIDO</span>}
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>INICIO</div>
+                        <div style={{ fontWeight: 800 }}>{new Date(activeTenancy.startDate).toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>TÉRMINO</div>
+                        <div style={{ fontWeight: 800 }}>{activeTenancy.endDate ? new Date(activeTenancy.endDate).toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' }) : 'Indefinido'}</div>
+                      </div>
                     </div>
                   </div>
 
@@ -1193,12 +1204,22 @@ function AssignTenantForm({ propertyId, onDone }: { propertyId: string, onDone: 
     },
   });
 
-  const { register, handleSubmit } = useForm<AssignTenantDto>({
+  const { register, handleSubmit, setValue, watch } = useForm<AssignTenantDto>({
     defaultValues: {
       startDate: new Date().toISOString().split('T')[0],
       monthlyRent: 350000,
+      securityDeposit: 350000,
     }
   });
+
+  const startDate = watch('startDate');
+
+  const setYearLease = () => {
+    if (!startDate) return;
+    const end = new Date(startDate);
+    end.setFullYear(end.getFullYear() + 1);
+    setValue('endDate', end.toISOString().split('T')[0]);
+  };
 
   const { mutate, isPending } = useMutation({
     mutationFn: async (data: AssignTenantDto) => {
@@ -1227,16 +1248,32 @@ function AssignTenantForm({ propertyId, onDone }: { propertyId: string, onDone: 
           ))}
         </select>
       </div>
+
       <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
         <div className="flex flex-col gap-2">
           <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Monto Arriendo ($)</label>
           <input {...register('monthlyRent', { valueAsNumber: true })} type="number" required min="1" style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', width: '100%', fontSize: '0.9rem' }} />
         </div>
         <div className="flex flex-col gap-2">
+          <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Mes de Garantía ($)</label>
+          <input {...register('securityDeposit', { valueAsNumber: true })} type="number" min="0" style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', width: '100%', fontSize: '0.9rem' }} />
+        </div>
+      </div>
+
+      <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div className="flex flex-col gap-2">
           <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Fecha de Inicio</label>
           <input {...register('startDate')} type="date" required style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', width: '100%', fontSize: '0.9rem' }} />
         </div>
+        <div className="flex flex-col gap-2">
+          <div className="flex justify-between items-center">
+            <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Fecha de Término</label>
+            <button type="button" onClick={setYearLease} style={{ fontSize: '0.6rem', color: 'var(--primary)', border: 'none', background: 'none', cursor: 'pointer', fontWeight: 700 }}>+ 1 AÑO (AÑO CORRIDO)</button>
+          </div>
+          <input {...register('endDate')} type="date" style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', width: '100%', fontSize: '0.9rem' }} />
+        </div>
       </div>
+
       <button disabled={isPending || !tenants} className="btn btn-primary" style={{ height: '3rem', fontSize: '0.9rem', fontWeight: 600 }}>
         {isPending ? 'Asignando...' : 'Confirmar Asignación'}
       </button>
@@ -1604,6 +1641,58 @@ function MetersCard({ propertyId }: { propertyId: string }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+function SecurityDepositModal({ isOpen, onClose, initialAmount, propertyId, tenancyId }: { isOpen: boolean, onClose: () => void, initialAmount: number, propertyId: string, tenancyId: string }) {
+  const [amount, setAmount] = useState(initialAmount.toString());
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const numericAmount = Number(amount);
+    if (isNaN(numericAmount)) return;
+    
+    setIsSubmitting(true);
+    try {
+      await api.patch(`/properties/${propertyId}/tenancy/${tenancyId}/security-deposit`, { amount: numericAmount });
+      queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
+      toast.success('Garantía actualizada');
+      onClose();
+    } catch (e) {
+      toast.error('Error al actualizar garantía');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content animate-slide-up" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', padding: '2rem' }}>
+        <h2 className="font-heading" style={{ marginBottom: '1.5rem', fontSize: '1.5rem' }}>💰 Mes de Garantía</h2>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Monto de la Garantía ($)</label>
+            <input 
+              type="number" 
+              required 
+              autoFocus
+              value={amount}
+              onChange={e => setAmount(e.target.value)}
+              style={{ padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', fontSize: '1rem' }}
+            />
+          </div>
+          <div className="flex gap-3 mt-4">
+            <button type="button" onClick={onClose} className="btn btn-outline" style={{ flex: 1 }}>Cancelar</button>
+            <button type="submit" disabled={isSubmitting} className="btn btn-primary" style={{ flex: 1 }}>
+              {isSubmitting ? 'Guardando...' : 'Guardar'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

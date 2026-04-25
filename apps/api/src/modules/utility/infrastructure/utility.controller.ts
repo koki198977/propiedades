@@ -6,6 +6,7 @@ import { RequireRole } from '../../../shared/infrastructure/decorators/require-r
 import { CreateUtilityUseCase } from '../application/create-utility.use-case';
 import { GetUtilitiesUseCase } from '../application/get-utilities.use-case';
 import { DeleteUtilityUseCase } from '../application/delete-utility.use-case';
+import { CreateExpenseUseCase } from '../application/create-expense.use-case';
 import { CreateExpenseReminderUseCase } from '../application/create-expense-reminder.use-case';
 import { GetExpenseRemindersUseCase } from '../application/get-expense-reminders.use-case';
 import { DeleteExpenseReminderUseCase } from '../application/delete-expense-reminder.use-case';
@@ -21,6 +22,7 @@ export class UtilityController {
     private readonly createUtilityUseCase: CreateUtilityUseCase,
     private readonly getUtilitiesUseCase: GetUtilitiesUseCase,
     private readonly deleteUtilityUseCase: DeleteUtilityUseCase,
+    private readonly createExpenseUseCase: CreateExpenseUseCase,
     private readonly createReminderUseCase: CreateExpenseReminderUseCase,
     private readonly getRemindersUseCase: GetExpenseRemindersUseCase,
     private readonly deleteReminderUseCase: DeleteExpenseReminderUseCase,
@@ -51,6 +53,17 @@ export class UtilityController {
   @ApiOperation({ summary: 'Eliminar un gasto registrado' })
   async delete(@Param('id') id: string) {
     return this.deleteUtilityUseCase.execute(id);
+  }
+
+  @Post('expenses')
+  @RequireRole(OrganizationRole.ADMIN, OrganizationRole.EDITOR)
+  @ApiOperation({ summary: 'Registrar un gasto general (ej: Retiro)' })
+  async createExpense(@Request() req: any, @Body() dto: any) {
+    return this.createExpenseUseCase.execute({
+      ...dto,
+      organizationId: req.organizationId,
+      recordedById: req.user.id,
+    });
   }
 
   // --- Reminders ---

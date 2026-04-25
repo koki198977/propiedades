@@ -10,5 +10,6 @@ export class Tenant {
     public readonly isActive: boolean = true,
     public readonly createdAt?: Date,
     public readonly updatedAt?: Date,
+    public readonly currentProperty?: { id: string; address: string } | null,
   ) {}
 }

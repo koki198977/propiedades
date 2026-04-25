@@ -36,6 +36,9 @@ export enum UtilityType {
   TAX = 'TAX',
   COMMON_EXPENSES = 'COMMON_EXPENSES',
   INSURANCE = 'INSURANCE',
+  GARBAGE = 'GARBAGE',
+  WITHDRAWAL = 'WITHDRAWAL',
+  PERSONAL = 'PERSONAL',
   OTHER = 'OTHER',
 }
 
@@ -84,6 +87,9 @@ export const UtilityTypeLabels: Record<UtilityType, string> = {
   [UtilityType.TAX]: 'Contribuciones (Rol)',
   [UtilityType.COMMON_EXPENSES]: 'Gastos Comunes',
   [UtilityType.INSURANCE]: 'Seguro',
+  [UtilityType.GARBAGE]: 'Retiro de Basura',
+  [UtilityType.WITHDRAWAL]: 'Retiro de Dinero',
+  [UtilityType.PERSONAL]: 'Gastos Personales',
   [UtilityType.OTHER]: 'Otro',
 }
 

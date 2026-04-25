@@ -85,12 +85,21 @@ export class PrismaPropertyRepository implements IPropertyRepository {
       data: { isActive: false, endDate: new Date() },
     });
 
+    const endDate = data.endDate ? new Date(data.endDate) : null;
+
+    // Update the property's contractEndDate to match the new assignment
+    await this.prisma.property.update({
+      where: { id: propertyId },
+      data: { contractEndDate: endDate },
+    });
+
     // Create the new tenancy
     return this.prisma.propertyTenant.create({
       data: {
         propertyId,
         tenantId: data.tenantId,
         startDate: new Date(data.startDate),
+        endDate,
         monthlyRent: data.monthlyRent,
         securityDeposit: data.securityDeposit,
         isActive: true,
