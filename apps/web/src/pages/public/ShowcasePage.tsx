@@ -58,41 +58,50 @@ export default function ShowcasePage() {
   }
 
   return (
-    <div style={{ backgroundColor: '#f3f4f6', minHeight: '100vh' }}>
-      {/* Header Showcase Premium */}
-      <header style={{ 
-        background: 'linear-gradient(to bottom, #ffffff 0%, #f9fafb 100%)', 
-        borderBottom: '1px solid #e5e7eb', 
-        padding: '3rem 1rem', 
+    <div className="futuristic-bg" style={{ minHeight: '100vh', color: 'white' }}>
+      {/* Header Showcase Premium Futuristic */}
+      <header className="futuristic-glass" style={{ 
+        padding: '5rem 1rem', 
         textAlign: 'center',
-        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
+        position: 'relative',
+        zIndex: 10,
+        marginBottom: '2rem'
       }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <img 
-            src="/logo.png?v=3" 
-            alt="Logo" 
-            style={{ height: '80px', width: 'auto', marginBottom: '1.5rem', objectFit: 'contain' }} 
-          />
-          <h1 style={{ 
-            fontSize: '2.5rem', 
-            fontWeight: 900, 
-            fontFamily: 'var(--font-heading)', 
-            color: '#111827', 
-            marginBottom: '0.5rem', 
-            letterSpacing: '-0.03em',
-            lineHeight: 1.1
+        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+          <div style={{ position: 'relative', display: 'inline-block', marginBottom: '2rem' }}>
+            <div style={{ position: 'absolute', inset: '-10px', background: 'var(--primary)', filter: 'blur(30px)', opacity: 0.3, borderRadius: '50%' }}></div>
+            <img 
+              src="/logo.png?v=3" 
+              alt="Logo" 
+              style={{ height: '100px', width: 'auto', position: 'relative', zIndex: 1, filter: 'brightness(1.5)' }} 
+            />
+          </div>
+          
+          <h1 className="animated-gradient-text" style={{ 
+            fontSize: 'clamp(2.5rem, 8vw, 4rem)', 
+            fontWeight: 950, 
+            marginBottom: '1rem', 
+            letterSpacing: '-0.05em',
+            lineHeight: 1
           }}>
-             Explora las propiedades de {owner?.name || 'Administrador'}
+             Catálogo Exclusivo
           </h1>
-          <p className="text-muted" style={{ fontSize: '1.1rem', fontWeight: 500, color: '#6b7280' }}>Unidades exclusivas seleccionadas para su próximo hogar.</p>
+          
+          <p style={{ fontSize: '1.25rem', fontWeight: 500, color: 'rgba(255,255,255,0.7)', maxWidth: '600px', margin: '0 auto', lineHeight: 1.6 }}>
+            Explora la colección seleccionada por <span style={{ color: 'white', fontWeight: 800, borderBottom: '2px solid var(--primary)' }}>{owner?.name || 'Nuestro Equipo'}</span>
+          </p>
         </div>
+        
+        {/* Animated Orbs for flair */}
+        <div style={{ position: 'absolute', top: '10%', left: '5%', width: '300px', height: '300px', background: 'radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%)', pointerEvents: 'none' }}></div>
+        <div style={{ position: 'absolute', bottom: '0', right: '10%', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(168, 85, 247, 0.05) 0%, transparent 70%)', pointerEvents: 'none' }}></div>
       </header>
 
       {/* Grid de Propiedades */}
-      <main className="container animate-fade-in" style={{ padding: '3rem 1rem' }}>
+      <main className="container animate-fade-in" style={{ padding: '0 1rem 8rem 1rem' }}>
         {paginatedProperties && paginatedProperties.length > 0 ? (
           <>
-            <div className="property-grid" style={{ gap: '2rem' }}>
+            <div className="property-grid" style={{ gap: '2.5rem' }}>
               {paginatedProperties.map((property: any) => (
               <Link 
                 key={property.id} 
@@ -100,21 +109,16 @@ export default function ShowcasePage() {
                 className="card-link"
                 style={{ textDecoration: 'none', color: 'inherit' }}
               >
-                <div className="card showcase-card" style={{ 
-                  padding: 0, 
-                  borderRadius: '1.5rem',
-                  overflow: 'hidden', 
+                <div className="futuristic-card" style={{ 
+                  height: '100%', 
                   display: 'flex', 
                   flexDirection: 'column', 
-                  height: '100%', 
-                  border: '1px solid #e5e7eb',
-                  boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)',
-                  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                  backgroundColor: 'white'
+                  backgroundColor: 'rgba(30, 41, 59, 0.5)',
+                  boxShadow: '0 20px 50px rgba(0,0,0,0.3)'
                 }}>
                   
                   {/* Cuadro de imagen */}
-                  <div style={{ width: '100%', height: '240px', backgroundColor: '#f3f4f6', position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ width: '100%', height: '280px', position: 'relative', overflow: 'hidden' }}>
                     {property.photos && property.photos.length > 0 ? (
                       <img 
                         src={property.photos[0].url} 
@@ -123,25 +127,20 @@ export default function ShowcasePage() {
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
                     ) : (
-                      <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', backgroundColor: '#f9fafb' }}>
-                        <span style={{ fontSize: '3rem' }}>🏢</span>
-                        <span className="text-muted" style={{ fontWeight: 600, fontSize: '0.8rem' }}>SIN FOTOGRAFÍAS</span>
+                      <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)' }}>
+                        <span style={{ fontSize: '3rem', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.2))' }}>🌌</span>
                       </div>
                     )}
                     
-                    {/* Badge Categoría */}
+                    {/* Badge Categoría - Futuristic Bubble */}
                     <div style={{ position: 'absolute', top: '1.25rem', left: '1.25rem' }}>
-                      <span className="badge" style={{ 
-                        backgroundColor: 'rgba(255,255,255,0.95)', 
-                        color: '#111827', 
-                        fontWeight: 800, 
-                        padding: '0.5rem 1rem', 
-                        borderRadius: '0.75rem',
-                        boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', 
-                        backdropFilter: 'blur(8px)',
-                        fontSize: '0.7rem',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em'
+                      <span className="badge futuristic-glass" style={{ 
+                        color: 'white', 
+                        fontWeight: 900, 
+                        padding: '0.6rem 1.2rem', 
+                        borderRadius: '2rem',
+                        fontSize: '0.75rem',
+                        letterSpacing: '0.1em'
                       }}>
                         {property.category === PropertyCategory.OTHER && property.customCategory
                           ? property.customCategory
@@ -149,72 +148,53 @@ export default function ShowcasePage() {
                       </span>
                     </div>
 
-                    <div style={{ position: 'absolute', bottom: '1.25rem', right: '1.25rem' }}>
-                       <span style={{ 
-                         background: 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)', 
-                         color: 'white', 
-                         padding: '0.4rem 0.8rem', 
-                         borderRadius: '0.75rem', 
-                         fontSize: '0.65rem', 
-                         fontWeight: 900,
-                         boxShadow: '0 4px 6px rgba(99, 102, 241, 0.3)'
-                       }}>VERIFICADA</span>
+                    {/* Rent Tag Overlay */}
+                    <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', background: 'linear-gradient(to top, rgba(15,23,42,0.9), transparent)', padding: '2rem 1.25rem 1.25rem 1.25rem' }}>
+                       <div style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', marginBottom: '0.2rem' }}>VALOR MENSUAL</div>
+                       <div className="neon-glow-text" style={{ fontSize: '1.75rem', fontWeight: 950, color: 'white' }}>
+                         {typeof property.expectedRent === 'number' ? `$${property.expectedRent.toLocaleString('es-CL')}` : 'Consultar'}
+                       </div>
                     </div>
                   </div>
 
                   {/* Detalles */}
                   <div style={{ padding: '2rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ marginBottom: '1.25rem' }}>
-                      <div className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem', color: '#6b7280' }}>Arriendo Mensual</div>
-                      <div style={{ fontSize: '1.75rem', fontWeight: 950, color: '#4f46e5', letterSpacing: '-0.02em' }}>
-                        {typeof property.expectedRent === 'number' ? `$${property.expectedRent.toLocaleString('es-CL')}` : 'Consultar'}
-                      </div>
-                    </div>
-
-                    <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#111827', marginBottom: '1rem', lineHeight: '1.2', flex: 1 }}>
+                    <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'white', marginBottom: '1.25rem', lineHeight: '1.3', flex: 1 }}>
                       {property.address}
                     </h3>
                     
-                    <div style={{ fontSize: '0.9rem', color: '#6b7280', display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem', fontWeight: 500 }}>
-                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>📍 Zona Estratégica</span>
-                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>✨ Equipada</span>
+                    <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem', fontWeight: 600 }}>
+                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                         <span style={{ color: 'var(--primary)' }}>✦</span> {property.city || 'Ubicación Premium'}
+                       </span>
+                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                         <span style={{ color: 'var(--accent)' }}>✦</span> {PropertyCategoryLabels[property.category as PropertyCategory] || 'Inmueble'}
+                       </span>
                     </div>
 
                     {/* Acciones */}
-                    <div style={{ display: 'flex', gap: '0.75rem', marginTop: 'auto' }}>
-                      <div 
-                        style={{ 
-                          flex: 1, 
-                          padding: '0.85rem', 
-                          backgroundColor: '#f9fafb', 
-                          border: '1px solid #e5e7eb', 
-                          borderRadius: '1rem', 
-                          fontWeight: 800, 
-                          textAlign: 'center', 
-                          fontSize: '0.9rem',
-                          color: '#374151'
-                        }}
-                      >
-                         Ver Detalles
+                    <div style={{ display: 'flex', gap: '1rem', marginTop: 'auto' }}>
+                      <div className="cyber-button" style={{ flex: 1, textAlign: 'center', padding: '0.8rem', fontSize: '0.85rem' }}>
+                         DESCUBRIR MAS
                       </div>
                       <button 
                         onClick={(e) => handleContact(e, property)}
+                        className="futuristic-glass"
                         style={{ 
-                          width: '54px', 
-                          height: '48px', 
-                          backgroundColor: '#22c55e', 
-                          color: 'white', 
-                          border: 'none', 
+                          width: '56px', 
+                          height: '52px', 
+                          color: '#22c55e', 
+                          border: '1px solid rgba(34, 197, 94, 0.3)', 
                           borderRadius: '1rem', 
                           cursor: 'pointer', 
                           display: 'flex', 
                           justifyContent: 'center', 
                           alignItems: 'center',
-                          boxShadow: '0 4px 6px rgba(34, 197, 94, 0.2)'
+                          boxShadow: '0 0 15px rgba(34, 197, 94, 0.1)'
                         }}
-                        title="WhatsApp"
+                        title="Enviar WhatsApp"
                       >
-                        <span style={{ fontSize: '1.25rem' }}>💬</span>
+                        <span style={{ fontSize: '1.5rem' }}>📲</span>
                       </button>
                     </div>
                   </div>
@@ -223,22 +203,22 @@ export default function ShowcasePage() {
             ))}
           </div>
 
-          {/* Paginación */}
+          {/* Paginación - Futuristic Dots */}
           {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-2" style={{ marginTop: '4rem' }}>
+            <div className="flex justify-center items-center gap-6" style={{ marginTop: '6rem' }}>
               <button
                 onClick={() => {
                   setPage(p => Math.max(1, p - 1));
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
                 disabled={page === 1}
-                className="btn btn-outline"
-                style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', opacity: page === 1 ? 0.4 : 1 }}
+                className="futuristic-glass"
+                style={{ padding: '0.75rem 1.5rem', color: 'white', borderRadius: '1rem', cursor: 'pointer', opacity: page === 1 ? 0.3 : 1, fontWeight: 700 }}
               >
-                ← Anterior
+                ❮ PREV
               </button>
 
-              <div className="flex gap-1">
+              <div className="flex gap-3">
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
                   <button
                     key={p}
@@ -247,20 +227,17 @@ export default function ShowcasePage() {
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                     style={{
-                      width: '2.25rem',
-                      height: '2.25rem',
-                      borderRadius: '0.5rem',
-                      border: p === page ? 'none' : '1px solid var(--border)',
-                      background: p === page ? 'var(--primary)' : 'transparent',
-                      color: p === page ? 'white' : 'inherit',
+                      width: '12px',
+                      height: '12px',
+                      borderRadius: '50%',
+                      border: 'none',
+                      background: p === page ? 'linear-gradient(to bottom, #818cf8, #c084fc)' : 'rgba(255,255,255,0.1)',
+                      boxShadow: p === page ? '0 0 15px #818cf8' : 'none',
                       cursor: 'pointer',
-                      fontWeight: p === page ? 700 : 400,
-                      fontSize: '0.875rem',
-                      transition: 'all 0.15s',
+                      transition: 'all 0.3s',
+                      transform: p === page ? 'scale(1.3)' : 'scale(1)'
                     }}
-                  >
-                    {p}
-                  </button>
+                  />
                 ))}
               </div>
 
@@ -270,26 +247,26 @@ export default function ShowcasePage() {
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
                 disabled={page === totalPages}
-                className="btn btn-outline"
-                style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', opacity: page === totalPages ? 0.4 : 1 }}
+                className="futuristic-glass"
+                style={{ padding: '0.75rem 1.5rem', color: 'white', borderRadius: '1rem', cursor: 'pointer', opacity: page === totalPages ? 0.3 : 1, fontWeight: 700 }}
               >
-                Siguiente →
+                NEXT ❯
               </button>
             </div>
           )}
           </>
         ) : (
-          <div style={{ textAlign: 'center', padding: '4rem 0' }}>
-            <div style={{ fontSize: '4rem', marginBottom: '1rem', opacity: 0.5 }}>🏡</div>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--text-muted)' }}>No hay propiedades disponibles</h3>
-            <p className="text-muted">Actualmente todas las propiedades están arrendadas.</p>
+          <div className="futuristic-glass" style={{ textAlign: 'center', padding: '6rem 2rem', borderRadius: '3rem' }}>
+            <div style={{ fontSize: '5rem', marginBottom: '2rem', animation: 'float 3s ease-in-out infinite' }}>🛸</div>
+            <h3 className="neon-glow-text" style={{ fontSize: '2rem', fontWeight: 900, color: 'white', marginBottom: '1rem' }}>Horizonte Vacío</h3>
+            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2rem' }}>Actualmente todas nuestras naves están en órbita. Vuelve pronto.</p>
           </div>
         )}
       </main>
 
-      <footer style={{ padding: '2rem', textAlign: 'center', backgroundColor: 'var(--bg-main)', borderTop: '1px solid var(--border)' }}>
-        <p className="text-muted" style={{ fontSize: '0.8rem' }}>
-          Plataforma de Gestión de Propiedades
+      <footer className="futuristic-glass" style={{ padding: '4rem 2rem', textAlign: 'center', marginTop: '4rem', borderBottom: 'none' }}>
+        <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.2rem', textTransform: 'uppercase', fontWeight: 700 }}>
+          Powered by Nexo Realty Technology • 2026
         </p>
       </footer>
     </div>
