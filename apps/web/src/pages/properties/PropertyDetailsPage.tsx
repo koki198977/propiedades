@@ -701,7 +701,7 @@ export default function PropertyDetailsPage() {
                   
                   {isAssigningTenant && (
                     <div style={{ marginTop: '1.5rem', textAlign: 'left', padding: '1.25rem', backgroundColor: 'white', borderRadius: '0.75rem', border: '1px solid var(--border)' }}>
-                      <AssignTenantForm propertyId={property.id} onDone={() => setIsAssigningTenant(false)} />
+                      <AssignTenantForm propertyId={property.id} expectedRent={property.expectedRent} onDone={() => setIsAssigningTenant(false)} />
                     </div>
                   )}
                 </div>
@@ -1232,21 +1232,23 @@ function EditPropertyForm({ property, onDone }: { property: PropertyDto, onDone:
   );
 }
 
-function AssignTenantForm({ propertyId, onDone }: { propertyId: string, onDone: () => void }) {
+function AssignTenantForm({ propertyId, expectedRent, onDone }: { propertyId: string, expectedRent?: number | null, onDone: () => void }) {
   const queryClient = useQueryClient();
-  const { data: tenants } = useQuery<TenantDto[]>({
-    queryKey: ['tenants'],
+  const { data: tenantsData } = useQuery<PaginatedResponse<TenantDto>>({
+    queryKey: ['tenants', 'list-all'],
     queryFn: async () => {
-      const resp = await api.get('/tenants');
+      const resp = await api.get('/tenants?limit=100'); // Fetch enough for the select
       return resp.data;
     },
   });
 
+  const tenants = tenantsData?.data || [];
+
   const { register, handleSubmit, setValue, watch } = useForm<AssignTenantDto>({
     defaultValues: {
       startDate: new Date().toISOString().split('T')[0],
-      monthlyRent: 350000,
-      securityDeposit: 350000,
+      monthlyRent: expectedRent || 350000,
+      securityDeposit: expectedRent || 350000,
     }
   });
 
@@ -1281,7 +1283,7 @@ function AssignTenantForm({ propertyId, onDone }: { propertyId: string, onDone: 
         <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Seleccionar Inquilino</label>
         <select {...register('tenantId')} required style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', width: '100%', fontSize: '0.9rem' }}>
           <option value="">Seleccione un inquilino...</option>
-          {tenants?.map(t => (
+          {tenants.map(t => (
             <option key={t.id} value={t.id}>{t.name} ({t.documentId})</option>
           ))}
         </select>
