@@ -24,10 +24,10 @@ import {
   CreateExpenseReminderDto,
   OrganizationRole,
 } from '@propiedades/types';
+import toast from 'react-hot-toast';
 import { useOrganization } from '../../providers/OrganizationProvider';
 import api from '@/api/axios';
 import { useState, useRef, useEffect } from 'react';
-import toast from 'react-hot-toast';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
@@ -802,7 +802,9 @@ function AddUtilityForm({ propertyId, onDone }: { propertyId: string, onDone: ()
       toast.success(isRecurring ? 'Recordatorio configurado' : 'Gasto registrado');
       onDone();
     },
-    onError: () => toast.error('Error al procesar la solicitud'),
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Error al procesar la solicitud');
+    },
   });
 
   return (

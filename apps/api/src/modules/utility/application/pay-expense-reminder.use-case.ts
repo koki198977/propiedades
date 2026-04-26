@@ -62,7 +62,8 @@ export class PayExpenseReminderUseCase {
     
     // Priorizamos coincidencias más específicas o largas para evitar falsos positivos
     if (t.includes('comun')) return UtilityType.COMMON_EXPENSES;
-    if (t.includes('contrib') || t.includes('tax') || t.includes('rol') || t.includes('basura')) return UtilityType.TAX;
+    if (t.includes('contrib') || t.includes('tax') || t.includes('rol')) return UtilityType.TAX;
+    if (t.includes('basura')) return UtilityType.GARBAGE;
     if (t.includes('segu')) return UtilityType.INSURANCE;
     if (t.includes('internet') || t.includes('wifi')) return UtilityType.INTERNET;
     if (t.includes('luz') || t.includes('elect')) return UtilityType.ELECTRICITY;

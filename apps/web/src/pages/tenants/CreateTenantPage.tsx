@@ -5,6 +5,9 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CreateTenantDto } from '@propiedades/types';
 import api from '@/api/axios';
+import toast from 'react-hot-toast';
+
+import { useOrganization } from '../../providers/OrganizationProvider';
 
 const tenantSchema = z.object({
   name: z.string().min(3, 'Nombre demasiado corto'),
@@ -16,6 +19,7 @@ const tenantSchema = z.object({
 export default function CreateTenantPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { activeOrganization } = useOrganization();
   
   const { register, handleSubmit, formState: { errors } } = useForm<CreateTenantDto>({
     resolver: zodResolver(tenantSchema),
@@ -23,14 +27,34 @@ export default function CreateTenantPage() {
 
   const { mutate, isPending, error } = useMutation({
     mutationFn: async (data: CreateTenantDto) => {
+      if (!activeOrganization) {
+        throw new Error('Debes seleccionar un espacio de trabajo primero');
+      }
       const resp = await api.post('/tenants', data);
       return resp.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
+      toast.success('Arrendatario registrado exitosamente');
       navigate('/tenants');
     },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || err.message || 'Error al registrar el arrendatario');
+    }
   });
+
+  if (!activeOrganization) {
+    return (
+      <div className="flex flex-col items-center justify-center p-20 text-center animate-fade-in">
+        <div style={{ fontSize: '4rem', marginBottom: '1.5rem' }}>🏢</div>
+        <h2 className="font-heading">Selecciona un Espacio de Trabajo</h2>
+        <p className="text-muted" style={{ maxWidth: '400px', margin: '1rem 0 2rem' }}>
+          Para registrar un arrendatario, primero debes seleccionar una organización en el menú superior.
+        </p>
+        <button onClick={() => navigate('/tenants')} className="btn btn-outline">Volver</button>
+      </div>
+    );
+  }
 
   return (
     <div className="container animate-fade-in" style={{ padding: '2rem 0', maxWidth: '600px' }}>

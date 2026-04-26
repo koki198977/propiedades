@@ -1,69 +1,54 @@
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { TenantDto, PaginatedResponse } from '@propiedades/types';
 import api from '@/api/axios';
+import { useOrganization } from '../../providers/OrganizationProvider';
 
 export default function TenantsPage() {
-  const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const { activeOrganization, isLoading: isLoadingOrg } = useOrganization();
+  const [searchParams] = useSearchParams();
+  const page = Number(searchParams.get('page')) || 1;
 
   const { data, isLoading, error } = useQuery<PaginatedResponse<TenantDto>>({
-    queryKey: ['tenants', page, limit],
+    queryKey: ['tenants', activeOrganization?.id, page],
     queryFn: async () => {
-      const resp = await api.get('/tenants', {
-        params: { page, limit }
-      });
+      const resp = await api.get(`/tenants?page=${page}&limit=10`);
       return resp.data;
     },
+    enabled: !!activeOrganization,
   });
 
-  const tenants = data?.data || [];
-  const meta = data?.meta;
-
-  if (isLoading) {
+  if (isLoadingOrg) {
     return (
-      <div className="container" style={{ padding: '2rem 0' }}>
-        <div className="flex justify-between items-center" style={{ marginBottom: '3rem' }}>
-          <div className="skeleton" style={{ width: '250px', height: '3rem' }}></div>
-          <div className="skeleton" style={{ width: '150px', height: '2.5rem' }}></div>
-        </div>
-        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead style={{ backgroundColor: 'var(--bg-surface)' }}>
-              <tr>
-                {[1, 2, 3, 4, 5, 6].map(i => (
-                  <th key={i} style={{ padding: '1rem 1.5rem', textAlign: 'left' }}>
-                    <div className="skeleton" style={{ width: '60%', height: '1rem' }}></div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {[1, 2, 3, 4, 5].map(i => (
-                <tr key={i} style={{ borderTop: '1px solid var(--border-light)' }}>
-                  {[1, 2, 3, 4, 5, 6].map(j => (
-                    <td key={j} style={{ padding: '1rem 1.5rem' }}>
-                      <div className="skeleton" style={{ width: j === 1 ? '70%' : '50%', height: '1.25rem' }}></div>
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <div className="flex justify-center p-20">
+        <div className="animate-spin" style={{ width: '40px', height: '40px', border: '4px solid var(--primary)', borderTopColor: 'transparent', borderRadius: '50%' }}></div>
       </div>
     );
   }
 
+  if (!activeOrganization) {
+    return (
+      <div className="flex flex-col items-center justify-center p-20 text-center animate-fade-in">
+        <div style={{ fontSize: '4rem', marginBottom: '1.5rem' }}>🏢</div>
+        <h2 className="font-heading">Selecciona un Espacio de Trabajo</h2>
+        <p className="text-muted" style={{ maxWidth: '400px', margin: '1rem 0 2rem' }}>
+          Para gestionar tus arrendatarios, primero debes seleccionar una organización en el menú superior.
+        </p>
+      </div>
+    );
+  }
+
+  const tenants = data?.data || [];
+  const meta = data?.meta;
+
   return (
-    <div className="container animate-fade-in" style={{ padding: '1.5rem 0' }}>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6" style={{ marginBottom: '3rem' }}>
+    <div className="flex flex-col gap-8">
+      <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
-          <h2 className="font-heading" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>Mis Arrendatarios</h2>
-          <p className="text-muted">Gestiona el contacto e información de tus clientes</p>
+          <h1 className="font-heading" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>Arrendatarios</h1>
+          <p className="text-muted">Gestiona la base de datos de clientes y sus contratos activos.</p>
         </div>
-        <Link to="/tenants/new" className="btn btn-primary" style={{ padding: '0.75rem 1.5rem', width: window.innerWidth < 640 ? '100%' : 'auto' }}>
+        <Link to="/tenants/new" className="btn btn-primary" style={{ padding: '0.75rem 1.5rem' }}>
           <span>+</span> Nuevo Arrendatario
         </Link>
       </div>
@@ -74,92 +59,96 @@ export default function TenantsPage() {
         </div>
       )}
 
-      {!data || tenants.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '5rem 2rem' }}>
-          <div style={{ fontSize: '4rem', marginBottom: '1.5rem' }}>👤</div>
-          <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>No tienes arrendatarios registrados</h3>
-          <p className="text-muted" style={{ marginBottom: '2rem' }}>Registra la información de contacto de las personas que alquilan tus propiedades.</p>
-          <Link to="/tenants/new" className="btn btn-primary">Registrar mi primer arrendatario</Link>
+      {isLoading ? (
+        <div className="flex justify-center p-20">
+          <div className="animate-spin" style={{ width: '40px', height: '40px', border: '4px solid var(--primary)', borderTopColor: 'transparent', borderRadius: '50%' }}></div>
         </div>
-      ) : (
+      ) : tenants.length > 0 ? (
         <>
-          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div className="table-responsive">
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
-                <thead style={{ backgroundColor: 'var(--bg-surface)', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                  <tr>
-                    <th style={{ padding: '1.25rem 1.5rem', fontWeight: 600, width: '20%' }}>Nombre</th>
-                    <th style={{ padding: '1.25rem 1.5rem', fontWeight: 600, width: '25%' }}>Propiedad</th>
-                    <th style={{ padding: '1.25rem 1.5rem', fontWeight: 600, width: '15%' }}>RUT / ID</th>
-                    <th style={{ padding: '1.25rem 1.5rem', fontWeight: 600, width: '20%' }}>Email</th>
-                    <th style={{ padding: '1.25rem 1.5rem', fontWeight: 600, width: '10%' }}>Teléfono</th>
-                    <th style={{ padding: '1.25rem 1.5rem', fontWeight: 600, textAlign: 'right', width: '10%' }}>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tenants.map((tenant) => (
-                    <tr key={tenant.id} style={{ borderTop: '1px solid var(--border-light)' }}>
-                      <td style={{ padding: '1.25rem 1.5rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tenant.name}</td>
-                      <td style={{ padding: '1.25rem 1.5rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {tenant.currentProperty ? (
-                          <Link to={`/properties/${tenant.currentProperty.id}`} style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>
-                            {tenant.currentProperty.address.split(',')[0]}
-                          </Link>
-                        ) : (
-                          <span className="text-muted">Sin propiedad</span>
-                        )}
-                      </td>
-                      <td style={{ padding: '1.25rem 1.5rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tenant.documentId || '-'}</td>
-                      <td style={{ padding: '1.25rem 1.5rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tenant.email || '-'}</td>
-                      <td style={{ padding: '1.25rem 1.5rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tenant.phone || '-'}</td>
-                      <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
-                        <Link to={`/tenants/${tenant.id}`} className="btn btn-outline" style={{ padding: '0.4rem 0.6rem', fontSize: '0.7rem' }}>Detalle</Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <div className="grid gap-6">
+            {tenants.map((tenant) => (
+              <div key={tenant.id} className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem' }}>
+                <div className="flex items-center gap-5">
+                  <div style={{ 
+                    width: '60px', 
+                    height: '60px', 
+                    borderRadius: '1rem', 
+                    background: 'linear-gradient(135deg, var(--primary-light), white)', 
+                    display: 'grid', 
+                    placeItems: 'center',
+                    border: '1px solid var(--border-light)'
+                  }}>
+                    <span style={{ fontSize: '1.5rem' }}>👤</span>
+                  </div>
+                  <div>
+                    <Link to={`/tenants/${tenant.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <h3 style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>{tenant.name}</h3>
+                    </Link>
+                    <div className="flex gap-4 items-center">
+                      {tenant.documentId && <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{tenant.documentId}</span>}
+                      {tenant.email && <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{tenant.email}</span>}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-8 items-center">
+                  <div className="flex flex-col">
+                    <span style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Propiedad Actual</span>
+                    {tenant.currentProperty ? (
+                      <Link to={`/properties/${tenant.currentProperty.id}`} style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>
+                        {tenant.currentProperty.address.split(',')[0]}
+                      </Link>
+                    ) : (
+                      <span className="text-muted">Sin propiedad</span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col items-end">
+                    <span className="badge" style={{ 
+                      backgroundColor: tenant.isActive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(100, 116, 139, 0.1)',
+                      color: tenant.isActive ? 'var(--success)' : 'var(--text-muted)',
+                      border: `1px solid ${tenant.isActive ? 'rgba(16, 185, 129, 0.2)' : 'rgba(100, 116, 139, 0.2)'}`
+                    }}>
+                      {tenant.isActive ? 'ACTIVO' : 'INACTIVO'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
 
+          {/* Pagination Controls */}
           {meta && meta.totalPages > 1 && (
-            <div className="flex justify-between items-center" style={{ marginTop: '2rem', padding: '0 1rem' }}>
-              <div className="text-muted" style={{ fontSize: '0.875rem' }}>
-                Mostrando {tenants.length} de {meta.total} arrendatarios
-              </div>
-              <div className="flex gap-2">
-                <button 
-                  className="btn btn-outline" 
-                  disabled={page === 1}
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  style={{ padding: '0.5rem 1rem' }}
-                >
-                  Anterior
-                </button>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: meta.totalPages }, (_, i) => i + 1).map(p => (
-                    <button
-                      key={p}
-                      onClick={() => setPage(p)}
-                      className={`btn ${page === p ? 'btn-primary' : 'btn-outline'}`}
-                      style={{ padding: '0.5rem 1rem', minWidth: '40px' }}
-                    >
-                      {p}
-                    </button>
-                  ))}
-                </div>
-                <button 
-                  className="btn btn-outline" 
-                  disabled={page === meta.totalPages}
-                  onClick={() => setPage(p => Math.min(meta.totalPages, p + 1))}
-                  style={{ padding: '0.5rem 1rem' }}
-                >
-                  Siguiente
-                </button>
-              </div>
-            </div>
+             <div className="flex justify-center gap-2 mt-8">
+                {Array.from({ length: meta.totalPages }, (_, i) => (
+                  <button
+                    key={i + 1}
+                    className={`btn ${page === i + 1 ? 'btn-primary' : 'btn-outline'}`}
+                    style={{ padding: '0.5rem 1rem' }}
+                    onClick={() => {
+                       const params = new URLSearchParams(window.location.search);
+                       params.set('page', (i + 1).toString());
+                       window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
+                       window.location.reload();
+                    }}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+             </div>
           )}
         </>
+      ) : (
+        <div className="card" style={{ padding: '4rem', textAlign: 'center', alignItems: 'center', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1.5rem' }}>📭</div>
+          <h3 style={{ marginBottom: '0.5rem' }}>No hay arrendatarios registrados</h3>
+          <p className="text-muted" style={{ maxWidth: '400px', marginBottom: '2rem' }}>
+            Empieza registrando a tu primer cliente para gestionar sus cobros y contratos.
+          </p>
+          <Link to="/tenants/new" className="btn btn-primary">
+            + Registrar Arrendatario
+          </Link>
+        </div>
       )}
     </div>
   );
