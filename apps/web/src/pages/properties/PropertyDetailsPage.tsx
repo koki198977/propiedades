@@ -656,7 +656,7 @@ export default function PropertyDetailsPage() {
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>TÉRMINO</div>
-                        <div style={{ fontWeight: 800 }}>{activeTenancy.endDate ? new Date(activeTenancy.endDate).toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' }) : 'Indefinido'}</div>
+                        <div style={{ fontWeight: 800 }}>{(activeTenancy.endDate || property.contractEndDate) ? new Date(activeTenancy.endDate || property.contractEndDate).toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' }) : 'Indefinido'}</div>
                       </div>
                     </div>
                   </div>

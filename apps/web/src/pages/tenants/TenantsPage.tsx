@@ -1,18 +1,22 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams, Link } from 'react-router-dom';
 import { TenantDto, PaginatedResponse } from '@propiedades/types';
 import api from '@/api/axios';
 import { useOrganization } from '../../providers/OrganizationProvider';
+import { useDebounce } from '../../hooks/useDebounce';
 
 export default function TenantsPage() {
   const { activeOrganization, isLoading: isLoadingOrg } = useOrganization();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+  const debouncedSearch = useDebounce(searchTerm, 500);
   const page = Number(searchParams.get('page')) || 1;
 
   const { data, isLoading, error } = useQuery<PaginatedResponse<TenantDto>>({
-    queryKey: ['tenants', activeOrganization?.id, page],
+    queryKey: ['tenants', activeOrganization?.id, page, debouncedSearch],
     queryFn: async () => {
-      const resp = await api.get(`/tenants?page=${page}&limit=10`);
+      const resp = await api.get(`/tenants?page=${page}&limit=10&search=${debouncedSearch}`);
       return resp.data;
     },
     enabled: !!activeOrganization,
@@ -51,6 +55,43 @@ export default function TenantsPage() {
         <Link to="/tenants/new" className="btn btn-primary" style={{ padding: '0.75rem 1.5rem' }}>
           <span>+</span> Nuevo Arrendatario
         </Link>
+      </div>
+
+      <div className="card" style={{ padding: '1rem', border: '1.5px solid var(--border)' }}>
+        <div className="flex items-center gap-3">
+          <span style={{ fontSize: '1.25rem', opacity: 0.5 }}>🔍</span>
+          <input
+            type="text"
+            className="input"
+            placeholder="Buscar por nombre, RUT o email..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              const params = new URLSearchParams(searchParams);
+              if (e.target.value) {
+                params.set('search', e.target.value);
+              } else {
+                params.delete('search');
+              }
+              params.set('page', '1'); // Reset to page 1 on search
+              setSearchParams(params, { replace: true });
+            }}
+            style={{ border: 'none', padding: '0.5rem', fontSize: '1rem', background: 'transparent' }}
+          />
+          {searchTerm && (
+            <button 
+              onClick={() => {
+                setSearchTerm('');
+                const params = new URLSearchParams(searchParams);
+                params.delete('search');
+                setSearchParams(params, { replace: true });
+              }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: 0.5, fontSize: '1rem' }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
       </div>
 
       {error && (
@@ -140,14 +181,33 @@ export default function TenantsPage() {
         </>
       ) : (
         <div className="card" style={{ padding: '4rem', textAlign: 'center', alignItems: 'center', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1.5rem' }}>📭</div>
-          <h3 style={{ marginBottom: '0.5rem' }}>No hay arrendatarios registrados</h3>
+          <div style={{ fontSize: '3rem', marginBottom: '1.5rem' }}>{debouncedSearch ? '🔍' : '📭'}</div>
+          <h3 style={{ marginBottom: '0.5rem' }}>
+            {debouncedSearch ? 'No se encontraron resultados' : 'No hay arrendatarios registrados'}
+          </h3>
           <p className="text-muted" style={{ maxWidth: '400px', marginBottom: '2rem' }}>
-            Empieza registrando a tu primer cliente para gestionar sus cobros y contratos.
+            {debouncedSearch 
+              ? `No encontramos coincidencias para "${debouncedSearch}". Intenta con otros términos.`
+              : 'Empieza registrando a tu primer cliente para gestionar sus cobros y contratos.'}
           </p>
-          <Link to="/tenants/new" className="btn btn-primary">
-            + Registrar Arrendatario
-          </Link>
+          {!debouncedSearch && (
+            <Link to="/tenants/new" className="btn btn-primary">
+              + Registrar Arrendatario
+            </Link>
+          )}
+          {debouncedSearch && (
+            <button 
+              onClick={() => {
+                setSearchTerm('');
+                const params = new URLSearchParams(searchParams);
+                params.delete('search');
+                setSearchParams(params, { replace: true });
+              }}
+              className="btn btn-outline"
+            >
+              Limpiar Búsqueda
+            </button>
+          )}
         </div>
       )}
     </div>

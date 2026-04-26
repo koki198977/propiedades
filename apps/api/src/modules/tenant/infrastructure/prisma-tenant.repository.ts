@@ -13,12 +13,23 @@ export class PrismaTenantRepository implements ITenantRepository {
     const limit = Number(query?.limit) || 20;
     const skip = (page - 1) * limit;
 
+    const search = query?.search;
+    const where: any = { 
+      organizationId,
+      isActive: true 
+    };
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { documentId: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
     const [tenants, total] = await Promise.all([
       this.prisma.tenant.findMany({
-        where: { 
-          organizationId,
-          isActive: true 
-        },
+        where,
         include: {
           properties: {
             where: { isActive: true },
@@ -30,10 +41,7 @@ export class PrismaTenantRepository implements ITenantRepository {
         take: limit,
       }),
       this.prisma.tenant.count({
-        where: { 
-          organizationId,
-          isActive: true 
-        },
+        where,
       }),
     ]);
 
