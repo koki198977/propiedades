@@ -47,31 +47,36 @@ export default function PublicPropertyDetailPage() {
   };
 
   return (
-    <div className="futuristic-bg" style={{ minHeight: '100vh', color: 'white' }}>
-      {/* Sticky Header Futuristic */}
-      <nav className="futuristic-glass" style={{ position: 'sticky', top: 0, zIndex: 100, padding: '1.25rem' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', color: 'var(--secondary)' }}>
+      {/* Sticky Header Clean */}
+      <nav style={{ 
+        position: 'sticky', 
+        top: 0, 
+        zIndex: 100, 
+        padding: '1rem', 
+        backgroundColor: 'white', 
+        borderBottom: '1px solid var(--border)',
+        boxShadow: 'var(--shadow-sm)'
+      }}>
         <div className="container flex justify-between items-center" style={{ padding: '0 1rem' }}>
-          <Link to={`/showcase/${userId}`} style={{ display: 'flex', alignItems: 'center', gap: '1rem', textDecoration: 'none', color: 'white' }}>
-             <img src="/logo.png?v=3" alt="Logo" style={{ height: '45px', filter: 'brightness(1.5)' }} />
-             <div className="animated-gradient-text" style={{ fontWeight: 900, fontSize: '1.25rem', letterSpacing: '-0.02em' }}>EXECUTIVE SHOWROOM</div>
+          <Link to={`/showcase/${userId}`} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
+             <img src="/logo.png?v=3" alt="Logo" style={{ height: '40px' }} />
+             <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--secondary)', letterSpacing: '-0.02em' }}>CATÁLOGO</div>
           </Link>
-          <Link to={`/showcase/${userId}`} className="futuristic-glass" style={{ textDecoration: 'none', color: 'white', fontSize: '0.8rem', padding: '0.6rem 1.25rem', borderRadius: '1rem', fontWeight: 700 }}>
-            ← VOLVER AL CATÁLOGO
+          <Link to={`/showcase/${userId}`} className="btn btn-outline" style={{ fontSize: '0.75rem', padding: '0.5rem 1rem' }}>
+            ← VOLVER
           </Link>
         </div>
       </nav>
 
       <main className="container animate-fade-in" style={{ padding: '3rem 1rem 8rem 1rem' }}>
-        {/* Main Layout Grid */}
-        <div className="flex flex-col lg:grid" style={{ gridTemplateColumns: '1.8fr 1fr', gap: '3rem' }}>
+        <div className="flex flex-col lg:grid" style={{ gridTemplateColumns: '1.8fr 1fr', gap: '2.5rem' }}>
           
           {/* Left Side: Photos & Content */}
-          <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-6">
             
-            {/* Gallery Wrapper - Cinematic View */}
-            <div className="futuristic-card" style={{ padding: '1.5rem', backgroundColor: 'rgba(30, 41, 59, 0.4)' }}>
-              {/* Feature Photo */}
-              <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: '1.5rem', overflow: 'hidden', backgroundColor: 'black', position: 'relative', boxShadow: '0 0 40px rgba(0,0,0,0.5)' }}>
+            <div className="card" style={{ padding: '1.5rem', backgroundColor: 'white' }}>
+              <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: '1rem', overflow: 'hidden', backgroundColor: '#f1f5f9', position: 'relative' }}>
                 {property.photos && property.photos.length > 0 ? (
                   <img 
                     src={property.photos[selectedPhotoIndex].url} 
@@ -79,36 +84,32 @@ export default function PublicPropertyDetailPage() {
                     style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
                   />
                 ) : (
-                  <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', color: 'rgba(255,255,255,0.2)' }}>IMAGEN NO DISPONIBLE</div>
+                  <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', color: 'var(--text-muted)' }}>IMAGEN NO DISPONIBLE</div>
                 )}
                 
-                {/* Badge Overlay - Glass */}
-                <div style={{ position: 'absolute', top: '1.5rem', left: '1.5rem' }}>
-                   <span className="badge futuristic-glass" style={{ color: 'white', fontWeight: 900, padding: '0.6rem 1.25rem', borderRadius: '2rem' }}>
+                <div style={{ position: 'absolute', top: '1rem', left: '1rem' }}>
+                   <span className="badge" style={{ backgroundColor: 'white', color: 'var(--secondary)', boxShadow: 'var(--shadow-sm)' }}>
                       {PropertyCategoryLabels[property.category as PropertyCategory] || 'Propiedad'}
                    </span>
                 </div>
               </div>
 
-              {/* Thumbnails - Horizontal Scroll */}
               {property.photos && property.photos.length > 1 && (
-                <div className="flex gap-4" style={{ marginTop: '1.5rem', overflowX: 'auto', paddingBottom: '1rem' }}>
+                <div className="flex gap-3" style={{ marginTop: '1rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
                   {property.photos.map((ph: any, i: number) => (
                     <div 
                       key={i} 
                       onClick={() => setSelectedPhotoIndex(i)}
                       style={{ 
                         flexShrink: 0, 
-                        width: '120px', 
-                        height: '80px', 
-                        borderRadius: '1rem', 
+                        width: '100px', 
+                        height: '65px', 
+                        borderRadius: '0.75rem', 
                         overflow: 'hidden', 
                         cursor: 'pointer',
-                        border: i === selectedPhotoIndex ? '2px solid #818cf8' : '2px solid rgba(255,255,255,0.1)',
-                        boxShadow: i === selectedPhotoIndex ? '0 0 15px rgba(129, 140, 248, 0.4)' : 'none',
-                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                        transform: i === selectedPhotoIndex ? 'scale(1.05)' : 'none',
-                        opacity: i === selectedPhotoIndex ? 1 : 0.6
+                        border: i === selectedPhotoIndex ? '2.5px solid var(--primary)' : '2px solid var(--border-light)',
+                        transition: 'all 0.2s',
+                        opacity: i === selectedPhotoIndex ? 1 : 0.7
                       }}
                     >
                       <img src={ph.url} alt={`Vista ${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -118,95 +119,90 @@ export default function PublicPropertyDetailPage() {
               )}
             </div>
 
-            {/* Content Details */}
-            <div className="futuristic-card" style={{ padding: '3rem', backgroundColor: 'rgba(30, 41, 59, 0.4)' }}>
-              <div style={{ marginBottom: '3rem' }}>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h1 className="neon-glow-text" style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', color: 'white', marginBottom: '0.5rem', fontWeight: 950 }}>{property.address}</h1>
-                      {property.city && <p style={{ fontWeight: 700, fontSize: '1.5rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '-0.02em' }}>{property.city}</p>}
-                    </div>
-                  </div>
-                  <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#10b981', fontWeight: 800, fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#10b981', boxShadow: '0 0 10px #10b981' }}></span> SISTEMA DISPONIBLE PARA ADJUDICACIÓN
-                  </div>
+            <div className="card" style={{ padding: '2.5rem', backgroundColor: 'white' }}>
+              <div style={{ marginBottom: '2.5rem' }}>
+                <h1 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.75rem)', color: 'var(--secondary)', marginBottom: '0.5rem', fontWeight: 800, letterSpacing: '-0.03em' }}>{property.address}</h1>
+                {property.city && <p style={{ fontWeight: 600, fontSize: '1.25rem', color: 'var(--text-muted)' }}>{property.city}</p>}
+                
+                <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#10b981', fontWeight: 700, fontSize: '0.85rem' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981' }}></span> DISPONIBLE
+                </div>
               </div>
 
-              {/* Características - Pulse Icons */}
               <div className="grid" style={{ 
-                gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', 
-                gap: '2rem', 
-                marginBottom: '4rem'
+                gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', 
+                gap: '1rem', 
+                marginBottom: '3rem'
               }}>
                 {[
                   { icon: '🛏️', label: 'Dormitorios', value: property.bedrooms ?? '0' },
                   { icon: '🚿', label: 'Baños', value: property.bathrooms ?? '0' },
-                  { icon: '📐', label: 'Dimensión', value: property.m2Built ? `${property.m2Built} m²` : '—' },
-                  { icon: '🚗', label: 'Parking', value: property.hasParking ? 'Incluido' : 'N/A' },
-                  { icon: '📦', label: 'Bodega', value: property.hasStorage ? 'Incluida' : 'N/A' }
+                  { icon: '📐', label: 'M2 Útiles', value: property.m2Built ? `${property.m2Built}` : '—' },
+                  { icon: '🚗', label: 'Estacionam.', value: property.hasParking ? 'Sí' : 'No' },
+                  { icon: '📦', label: 'Bodega', value: property.hasStorage ? 'Sí' : 'No' }
                 ].map((item, idx) => (
-                  <div key={idx} className="futuristic-glass" style={{ padding: '1.5rem', borderRadius: '2rem', textAlign: 'center', transition: 'transform 0.3s ease' }}>
-                    <div style={{ fontSize: '2rem', marginBottom: '1rem', filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' }}>{item.icon}</div>
-                    <div style={{ fontSize: '0.65rem', fontWeight: 900, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.25rem' }}>{item.label}</div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 900, color: 'white' }}>{item.value}</div>
+                  <div key={idx} style={{ padding: '1rem', borderRadius: '1rem', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-light)', textAlign: 'center' }}>
+                    <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{item.icon}</div>
+                    <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>{item.label}</div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--secondary)' }}>{item.value}</div>
                   </div>
                 ))}
               </div>
 
-              <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '3rem' }}>
-                <h3 style={{ fontSize: '2rem', color: 'white', marginBottom: '2rem', fontWeight: 900, letterSpacing: '-0.04em' }}>Especificaciones de la Unidad</h3>
+              <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '2.5rem' }}>
+                <h3 style={{ fontSize: '1.5rem', color: 'var(--secondary)', marginBottom: '1.5rem', fontWeight: 800 }}>Descripción de la Propiedad</h3>
                 {property.notes ? (
                   <div 
-                    style={{ fontSize: '1.25rem', lineHeight: 1.8, color: 'rgba(255,255,255,0.7)', letterSpacing: '-0.01em' }} 
+                    style={{ fontSize: '1.1rem', lineHeight: 1.7, color: 'var(--text-main)' }} 
                     className="rich-text-content"
                     dangerouslySetInnerHTML={{ __html: property.notes }}
                   />
                 ) : (
-                  <p style={{ fontStyle: 'italic', fontSize: '1.1rem', color: 'rgba(255,255,255,0.3)' }}>Este activo no posee descripción técnica detallada en el sistema.</p>
+                  <p style={{ fontStyle: 'italic', color: 'var(--text-muted)' }}>Sin descripción detallada disponible.</p>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Right Side: Command Center Contact */}
-          <div className="flex flex-col gap-8">
-            <div className="futuristic-glass" style={{ position: 'sticky', top: '7rem', padding: '3rem 2rem', textAlign: 'center', borderRadius: '2.5rem' }}>
-               <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', fontWeight: 900, marginBottom: '0.75rem', letterSpacing: '0.2em' }}>INVERSIÓN MENSUAL</div>
-               <div className="neon-glow-text" style={{ fontSize: '3rem', fontWeight: 950, color: 'white', marginBottom: '3rem' }}>
-                  {typeof property.expectedRent === 'number' ? `$${property.expectedRent.toLocaleString('es-CL')}` : 'CONSULTAR'}
+          {/* Right Side: Contact Card */}
+          <div className="flex flex-col gap-6">
+            <div className="card" style={{ position: 'sticky', top: '6rem', padding: '2.5rem 2rem', textAlign: 'center' }}>
+               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.5rem', letterSpacing: '0.05em' }}>Valor Arriendo</div>
+               <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--secondary)', marginBottom: '2.5rem' }}>
+                  {typeof property.expectedRent === 'number' ? `$${property.expectedRent.toLocaleString('es-CL')}` : 'Consultar'}
                </div>
                
-               <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '2.5rem', marginBottom: '2.5rem' }}>
-                  <div className="flex items-center gap-4" style={{ marginBottom: '2.5rem', textAlign: 'left', padding: '1rem', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '1.5rem' }}>
-                     <div style={{ width: '56px', height: '56px', borderRadius: '1.25rem', background: 'linear-gradient(135deg, #818cf8, #c084fc)', color: 'white', display: 'grid', placeItems: 'center', fontWeight: 950, fontSize: '1.5rem', boxShadow: '0 0 20px rgba(129, 140, 248, 0.4)' }}>
+               <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '2rem', marginBottom: '2rem' }}>
+                  <div className="flex items-center gap-4" style={{ marginBottom: '2rem', textAlign: 'left', padding: '1rem', backgroundColor: 'var(--bg-main)', borderRadius: '1rem' }}>
+                     <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--primary)', color: 'white', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: '1.25rem' }}>
                         {owner.name[0]}
                      </div>
                      <div>
-                        <div style={{ fontWeight: 900, fontSize: '1.1rem', color: 'white' }}>{owner.name}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', fontWeight: 700, textTransform: 'uppercase' }}>CHIEF OFFICER OPERATIVE</div>
+                        <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--secondary)' }}>{owner.name}</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>AGENTE INMOBILIARIO</div>
                      </div>
                   </div>
                   
-                  <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-3">
                      <button 
                         onClick={handleContact}
-                        className="cyber-button"
-                        style={{ width: '100%', height: '64px', fontSize: '1.1rem', background: 'linear-gradient(135deg, #10b981, #059669)', boxShadow: '0 0 30px rgba(16, 185, 129, 0.2)' }}
+                        className="btn btn-primary"
+                        style={{ width: '100%', height: '56px', fontSize: '1rem' }}
                      >
-                        INICIAR PROTOCOLO WHATSAPP
+                        Contactar por WhatsApp
                      </button>
                      <a 
                         href={`mailto:${owner.email}`}
-                        className="futuristic-glass"
-                        style={{ width: '100%', height: '58px', color: 'white', textDecoration: 'none', borderRadius: '1rem', fontWeight: 800, fontSize: '0.9rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.75rem' }}
+                        className="btn btn-outline"
+                        style={{ width: '100%', height: '56px', textDecoration: 'none' }}
                      >
-                        SOLICITAR DOSSIER POR EMAIL
+                        Enviar Email
                      </a>
                   </div>
                </div>
                
-               <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', lineHeight: 1.6, fontWeight: 500 }}>
-                  * Nexo Realty Core v4.0 • Sistema de Encriptación de Datos Activo.
+               <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                  Al contactar, aceptas nuestros términos de servicio y políticas de privacidad.
                </p>
             </div>
           </div>
@@ -214,13 +210,13 @@ export default function PublicPropertyDetailPage() {
         </div>
       </main>
 
-      <footer className="futuristic-glass" style={{ padding: '6rem 1rem', textAlign: 'center', borderBottom: 'none' }}>
+      <footer style={{ padding: '4rem 1rem', textAlign: 'center', borderTop: '1px solid var(--border)', backgroundColor: 'white' }}>
          <div className="container">
-            <img src="/logo.png?v=3" alt="Logo" style={{ height: '80px', filter: 'brightness(2)', marginBottom: '2rem', opacity: 0.8 }} />
-            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.9rem', letterSpacing: '0.1em' }}>SISTEMA DE GESTIÓN PATRIMONIAL DE ALTA DISPONIBILIDAD</p>
-            <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.75rem', marginTop: '3rem' }}>&copy; 2026 NEXO REALTY CORE. TERMINACIÓN DE ENLACE SEGURO.</p>
+            <img src="/logo.png?v=3" alt="Logo" style={{ height: '60px', marginBottom: '1.5rem', opacity: 0.8 }} />
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>&copy; 2026 Nexo Realty. Todos los derechos reservados.</p>
          </div>
       </footer>
     </div>
   );
 }
+

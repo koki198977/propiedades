@@ -58,50 +58,46 @@ export default function ShowcasePage() {
   }
 
   return (
-    <div className="futuristic-bg" style={{ minHeight: '100vh', color: 'white' }}>
-      {/* Header Showcase Premium Futuristic */}
-      <header className="futuristic-glass" style={{ 
-        padding: '5rem 1rem', 
+    <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', color: 'var(--secondary)' }}>
+      {/* Header Showcase Clean & Professional */}
+      <header style={{ 
+        padding: '4rem 1rem', 
         textAlign: 'center',
-        position: 'relative',
-        zIndex: 10,
-        marginBottom: '2rem'
+        backgroundColor: 'white',
+        borderBottom: '1px solid var(--border)',
+        marginBottom: '4rem'
       }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-          <div style={{ position: 'relative', display: 'inline-block', marginBottom: '2rem' }}>
-            <div style={{ position: 'absolute', inset: '-10px', background: 'var(--primary)', filter: 'blur(30px)', opacity: 0.3, borderRadius: '50%' }}></div>
+        <div className="container">
+          <div style={{ marginBottom: '2rem' }}>
             <img 
               src="/logo.png?v=3" 
               alt="Logo" 
-              style={{ height: '100px', width: 'auto', position: 'relative', zIndex: 1, filter: 'brightness(1.5)' }} 
+              style={{ height: '80px', width: 'auto' }} 
             />
           </div>
           
-          <h1 className="animated-gradient-text" style={{ 
-            fontSize: 'clamp(2.5rem, 8vw, 4rem)', 
-            fontWeight: 950, 
+          <h1 style={{ 
+            fontSize: 'clamp(2.5rem, 8vw, 3.5rem)', 
+            fontWeight: 800, 
             marginBottom: '1rem', 
-            letterSpacing: '-0.05em',
-            lineHeight: 1
+            letterSpacing: '-0.04em',
+            color: 'var(--secondary)',
+            lineHeight: 1.1
           }}>
-             Catálogo Exclusivo
+             Catálogo de Propiedades
           </h1>
           
-          <p style={{ fontSize: '1.25rem', fontWeight: 500, color: 'rgba(255,255,255,0.7)', maxWidth: '600px', margin: '0 auto', lineHeight: 1.6 }}>
-            Explora la colección seleccionada por <span style={{ color: 'white', fontWeight: 800, borderBottom: '2px solid var(--primary)' }}>{owner?.name || 'Nuestro Equipo'}</span>
+          <p style={{ fontSize: '1.125rem', fontWeight: 500, color: 'var(--text-muted)', maxWidth: '600px', margin: '0 auto', lineHeight: 1.6 }}>
+            Explora las mejores oportunidades seleccionadas por <span style={{ color: 'var(--primary)', fontWeight: 700 }}>{owner?.name || 'Nuestro Equipo'}</span>
           </p>
         </div>
-        
-        {/* Animated Orbs for flair */}
-        <div style={{ position: 'absolute', top: '10%', left: '5%', width: '300px', height: '300px', background: 'radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%)', pointerEvents: 'none' }}></div>
-        <div style={{ position: 'absolute', bottom: '0', right: '10%', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(168, 85, 247, 0.05) 0%, transparent 70%)', pointerEvents: 'none' }}></div>
       </header>
 
       {/* Grid de Propiedades */}
       <main className="container animate-fade-in" style={{ padding: '0 1rem 8rem 1rem' }}>
         {paginatedProperties && paginatedProperties.length > 0 ? (
           <>
-            <div className="property-grid" style={{ gap: '2.5rem' }}>
+            <div className="property-grid" style={{ gap: '2rem' }}>
               {paginatedProperties.map((property: any) => (
               <Link 
                 key={property.id} 
@@ -109,16 +105,17 @@ export default function ShowcasePage() {
                 className="card-link"
                 style={{ textDecoration: 'none', color: 'inherit' }}
               >
-                <div className="futuristic-card" style={{ 
+                <div className="card" style={{ 
                   height: '100%', 
                   display: 'flex', 
                   flexDirection: 'column', 
-                  backgroundColor: 'rgba(30, 41, 59, 0.5)',
-                  boxShadow: '0 20px 50px rgba(0,0,0,0.3)'
+                  padding: 0,
+                  overflow: 'hidden',
+                  border: '1px solid var(--border)'
                 }}>
                   
                   {/* Cuadro de imagen */}
-                  <div style={{ width: '100%', height: '280px', position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ width: '100%', height: '240px', position: 'relative', overflow: 'hidden', backgroundColor: '#f1f5f9' }}>
                     {property.photos && property.photos.length > 0 ? (
                       <img 
                         src={property.photos[0].url} 
@@ -127,74 +124,62 @@ export default function ShowcasePage() {
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
                     ) : (
-                      <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)' }}>
-                        <span style={{ fontSize: '3rem', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.2))' }}>🌌</span>
+                      <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center' }}>
+                        <span style={{ fontSize: '3rem', opacity: 0.2 }}>🏠</span>
                       </div>
                     )}
                     
-                    {/* Badge Categoría - Futuristic Bubble */}
-                    <div style={{ position: 'absolute', top: '1.25rem', left: '1.25rem' }}>
-                      <span className="badge futuristic-glass" style={{ 
-                        color: 'white', 
-                        fontWeight: 900, 
-                        padding: '0.6rem 1.2rem', 
-                        borderRadius: '2rem',
-                        fontSize: '0.75rem',
-                        letterSpacing: '0.1em'
+                    {/* Badge Categoría */}
+                    <div style={{ position: 'absolute', top: '1rem', left: '1rem' }}>
+                      <span className="badge" style={{ 
+                        backgroundColor: 'white',
+                        color: 'var(--secondary)', 
+                        boxShadow: 'var(--shadow-sm)',
+                        padding: '0.5rem 1rem'
                       }}>
                         {property.category === PropertyCategory.OTHER && property.customCategory
                           ? property.customCategory
                           : (PropertyCategoryLabels[property.category as PropertyCategory] || 'Propiedad')}
                       </span>
                     </div>
-
-                    {/* Rent Tag Overlay */}
-                    <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', background: 'linear-gradient(to top, rgba(15,23,42,0.9), transparent)', padding: '2rem 1.25rem 1.25rem 1.25rem' }}>
-                       <div style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', marginBottom: '0.2rem' }}>VALOR MENSUAL</div>
-                       <div className="neon-glow-text" style={{ fontSize: '1.75rem', fontWeight: 950, color: 'white' }}>
-                         {typeof property.expectedRent === 'number' ? `$${property.expectedRent.toLocaleString('es-CL')}` : 'Consultar'}
-                       </div>
-                    </div>
                   </div>
 
                   {/* Detalles */}
-                  <div style={{ padding: '2rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'white', marginBottom: '1.25rem', lineHeight: '1.3', flex: 1 }}>
+                  <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ marginBottom: '0.5rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      {property.city || 'Ubicación Premium'}
+                    </div>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--secondary)', marginBottom: '1rem', lineHeight: '1.4', flex: 1 }}>
                       {property.address}
                     </h3>
                     
-                    <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem', fontWeight: 600 }}>
-                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                         <span style={{ color: 'var(--primary)' }}>✦</span> {property.city || 'Ubicación Premium'}
-                       </span>
-                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                         <span style={{ color: 'var(--accent)' }}>✦</span> {PropertyCategoryLabels[property.category as PropertyCategory] || 'Inmueble'}
-                       </span>
-                    </div>
-
-                    {/* Acciones */}
-                    <div style={{ display: 'flex', gap: '1rem', marginTop: 'auto' }}>
-                      <div className="cyber-button" style={{ flex: 1, textAlign: 'center', padding: '0.8rem', fontSize: '0.85rem' }}>
-                         DESCUBRIR MAS
-                      </div>
-                      <button 
+                    <div className="flex items-center justify-between" style={{ marginTop: 'auto', paddingTop: '1.5rem', borderTop: '1px solid var(--border-light)' }}>
+                       <div>
+                          <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Valor Mensual</div>
+                          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--secondary)' }}>
+                            {typeof property.expectedRent === 'number' ? `$${property.expectedRent.toLocaleString('es-CL')}` : 'Consultar'}
+                          </div>
+                       </div>
+                       <button 
                         onClick={(e) => handleContact(e, property)}
-                        className="futuristic-glass"
                         style={{ 
-                          width: '56px', 
-                          height: '52px', 
-                          color: '#22c55e', 
-                          border: '1px solid rgba(34, 197, 94, 0.3)', 
-                          borderRadius: '1rem', 
+                          width: '44px', 
+                          height: '44px', 
+                          color: '#10b981', 
+                          border: '1.5px solid #10b981', 
+                          borderRadius: '0.75rem', 
                           cursor: 'pointer', 
                           display: 'flex', 
                           justifyContent: 'center', 
                           alignItems: 'center',
-                          boxShadow: '0 0 15px rgba(34, 197, 94, 0.1)'
+                          background: 'transparent',
+                          transition: 'all 0.2s'
                         }}
+                        onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(16, 185, 129, 0.05)'; }}
+                        onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
                         title="Enviar WhatsApp"
                       >
-                        <span style={{ fontSize: '1.5rem' }}>📲</span>
+                        <span style={{ fontSize: '1.25rem' }}>📲</span>
                       </button>
                     </div>
                   </div>
@@ -203,7 +188,7 @@ export default function ShowcasePage() {
             ))}
           </div>
 
-          {/* Paginación - Futuristic Dots */}
+          {/* Paginación */}
           {totalPages > 1 && (
             <div className="flex justify-center items-center gap-6" style={{ marginTop: '6rem' }}>
               <button
@@ -212,13 +197,13 @@ export default function ShowcasePage() {
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
                 disabled={page === 1}
-                className="futuristic-glass"
-                style={{ padding: '0.75rem 1.5rem', color: 'white', borderRadius: '1rem', cursor: 'pointer', opacity: page === 1 ? 0.3 : 1, fontWeight: 700 }}
+                className="btn btn-outline"
+                style={{ padding: '0.6rem 1.25rem' }}
               >
-                ❮ PREV
+                Anterior
               </button>
 
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
                   <button
                     key={p}
@@ -227,15 +212,14 @@ export default function ShowcasePage() {
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                     style={{
-                      width: '12px',
-                      height: '12px',
+                      width: '10px',
+                      height: '10px',
                       borderRadius: '50%',
                       border: 'none',
-                      background: p === page ? 'linear-gradient(to bottom, #818cf8, #c084fc)' : 'rgba(255,255,255,0.1)',
-                      boxShadow: p === page ? '0 0 15px #818cf8' : 'none',
+                      background: p === page ? 'var(--primary)' : 'var(--border)',
                       cursor: 'pointer',
                       transition: 'all 0.3s',
-                      transform: p === page ? 'scale(1.3)' : 'scale(1)'
+                      transform: p === page ? 'scale(1.2)' : 'scale(1)'
                     }}
                   />
                 ))}
@@ -247,25 +231,25 @@ export default function ShowcasePage() {
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
                 disabled={page === totalPages}
-                className="futuristic-glass"
-                style={{ padding: '0.75rem 1.5rem', color: 'white', borderRadius: '1rem', cursor: 'pointer', opacity: page === totalPages ? 0.3 : 1, fontWeight: 700 }}
+                className="btn btn-outline"
+                style={{ padding: '0.6rem 1.25rem' }}
               >
-                NEXT ❯
+                Siguiente
               </button>
             </div>
           )}
           </>
         ) : (
-          <div className="futuristic-glass" style={{ textAlign: 'center', padding: '6rem 2rem', borderRadius: '3rem' }}>
-            <div style={{ fontSize: '5rem', marginBottom: '2rem', animation: 'float 3s ease-in-out infinite' }}>🛸</div>
-            <h3 className="neon-glow-text" style={{ fontSize: '2rem', fontWeight: 900, color: 'white', marginBottom: '1rem' }}>Horizonte Vacío</h3>
-            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2rem' }}>Actualmente todas nuestras naves están en órbita. Vuelve pronto.</p>
+          <div className="card" style={{ textAlign: 'center', padding: '6rem 2rem', borderRadius: '1.5rem' }}>
+            <div style={{ fontSize: '4rem', marginBottom: '1.5rem' }}>🏠</div>
+            <h3 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--secondary)', marginBottom: '0.5rem' }}>Sin propiedades disponibles</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Vuelve pronto para ver nuestras nuevas ofertas.</p>
           </div>
         )}
       </main>
 
-      <footer className="futuristic-glass" style={{ padding: '4rem 2rem', textAlign: 'center', marginTop: '4rem', borderBottom: 'none' }}>
-        <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.2rem', textTransform: 'uppercase', fontWeight: 700 }}>
+      <footer style={{ padding: '4rem 2rem', textAlign: 'center', borderTop: '1px solid var(--border)', backgroundColor: 'white' }}>
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>
           Powered by Nexo Realty Technology • 2026
         </p>
       </footer>
