@@ -1235,12 +1235,15 @@ function EditPropertyForm({ property, onDone }: { property: PropertyDto, onDone:
 
 function AssignTenantForm({ propertyId, expectedRent, onDone }: { propertyId: string, expectedRent?: number | null, onDone: () => void }) {
   const queryClient = useQueryClient();
-  const { data: tenantsData } = useQuery<PaginatedResponse<TenantDto>>({
-    queryKey: ['tenants', 'list-all'],
+  const { activeOrganization } = useOrganization();
+
+  const { data: tenantsData, isLoading: isLoadingTenants, error: tenantsError } = useQuery<PaginatedResponse<TenantDto>>({
+    queryKey: ['tenants', activeOrganization?.id, 'assign-form-list'],
     queryFn: async () => {
-      const resp = await api.get('/tenants?limit=100'); // Fetch enough for the select
+      const resp = await api.get('/tenants?limit=100&isActive=true');
       return resp.data;
     },
+    enabled: !!activeOrganization,
   });
 
   const tenants = tenantsData?.data || [];
@@ -1281,13 +1284,36 @@ function AssignTenantForm({ propertyId, expectedRent, onDone }: { propertyId: st
   return (
     <form onSubmit={handleSubmit((data) => mutate(data))} className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Seleccionar Inquilino</label>
-        <select {...register('tenantId')} required style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', width: '100%', fontSize: '0.9rem' }}>
-          <option value="">Seleccione un inquilino...</option>
-          {tenants.map((t: TenantDto) => (
-            <option key={t.id} value={t.id}>{t.name} ({t.documentId})</option>
-          ))}
+        <div className="flex justify-between items-center">
+          <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Seleccionar Inquilino</label>
+          {isLoadingTenants && <span style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: 600 }}>Cargando...</span>}
+        </div>
+        <select 
+          {...register('tenantId')} 
+          required 
+          disabled={isLoadingTenants || tenants.length === 0}
+          style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', width: '100%', fontSize: '0.9rem', backgroundColor: (isLoadingTenants || tenants.length === 0) ? '#f8fafc' : 'white' }}
+        >
+          {isLoadingTenants ? (
+            <option>Cargando arrendatarios...</option>
+          ) : tenants.length === 0 ? (
+            <option value="">No hay arrendatarios activos</option>
+          ) : (
+            <>
+              <option value="">Seleccione un inquilino...</option>
+              {tenants.map((t: TenantDto) => (
+                <option key={t.id} value={t.id}>{t.name} ({t.documentId})</option>
+              ))}
+            </>
+          )}
         </select>
+        {tenantsError && <p style={{ fontSize: '0.65rem', color: 'var(--danger)' }}>Error al cargar arrendatarios</p>}
+        {tenants.length === 0 && !isLoadingTenants && !tenantsError && (
+          <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+            Debes tener arrendatarios registrados y activos. 
+            <Link to="/tenants" style={{ color: 'var(--primary)', marginLeft: '0.25rem' }}>Ir a Arrendatarios</Link>
+          </p>
+        )}
       </div>
 
       <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
