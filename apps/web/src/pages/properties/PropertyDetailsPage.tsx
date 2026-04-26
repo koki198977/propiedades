@@ -23,6 +23,7 @@ import {
   ExpenseReminderDto,
   CreateExpenseReminderDto,
   OrganizationRole,
+  PaginatedResponse,
 } from '@propiedades/types';
 import toast from 'react-hot-toast';
 import { useOrganization } from '../../providers/OrganizationProvider';
@@ -1283,7 +1284,7 @@ function AssignTenantForm({ propertyId, expectedRent, onDone }: { propertyId: st
         <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Seleccionar Inquilino</label>
         <select {...register('tenantId')} required style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', width: '100%', fontSize: '0.9rem' }}>
           <option value="">Seleccione un inquilino...</option>
-          {tenants.map(t => (
+          {tenants.map((t: TenantDto) => (
             <option key={t.id} value={t.id}>{t.name} ({t.documentId})</option>
           ))}
         </select>
