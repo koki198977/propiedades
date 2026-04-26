@@ -422,42 +422,78 @@ export default function PropertyDetailsPage() {
             {/* [NEW] Pending Garanties Section */}
             {property.pendingSecurityDeposits && property.pendingSecurityDeposits.length > 0 && (
               <div className="card" style={{ border: '2px solid #f59e0b', backgroundColor: '#fffbeb', marginBottom: '2rem' }}>
-                <h3 className="font-heading" style={{ fontSize: '1.25rem', marginBottom: '1.5rem', color: '#b45309', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  ⚠️ Garantías Pendientes de Devolución
-                </h3>
+                <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem' }}>
+                  <h3 className="font-heading" style={{ fontSize: '1.25rem', color: '#b45309', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+                    ⚠️ Garantías por Devolver
+                  </h3>
+                  <span style={{ fontSize: '0.7rem', color: '#b45309', fontWeight: 600, backgroundColor: '#fef3c7', padding: '0.25rem 0.5rem', borderRadius: '0.5rem' }}>
+                    Plazo legal: 45 días
+                  </span>
+                </div>
+
                 <div className="flex flex-col gap-4">
-                  {property.pendingSecurityDeposits.map(tenancy => (
-                    <div key={tenancy.id} style={{ background: 'white', padding: '1.25rem', borderRadius: '0.75rem', border: '1px solid #fde68a' }}>
-                      <div className="flex justify-between items-center" style={{ marginBottom: '1rem' }}>
-                        <div>
-                          <div style={{ fontWeight: 800, fontSize: '0.9rem' }}>{tenancy.tenant.name}</div>
-                          <div className="text-muted" style={{ fontSize: '0.7rem' }}>Contrato finalizado</div>
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontWeight: 900, color: '#f59e0b' }}>
-                            ${Number(tenancy.securityDeposit).toLocaleString('es-CL')}
+                  {property.pendingSecurityDeposits.map(tenancy => {
+                    const daysPassed = tenancy.endDate ? Math.max(0, Math.ceil((new Date().getTime() - new Date(tenancy.endDate).getTime()) / (1000 * 60 * 60 * 24))) : 0;
+                    const daysRemaining = 45 - daysPassed;
+                    const isOverdue = daysRemaining < 0;
+                    const statusColor = daysRemaining <= 5 ? '#ef4444' : daysRemaining <= 15 ? '#f59e0b' : '#10b981';
+
+                    return (
+                      <div key={tenancy.id} style={{ background: 'white', padding: '1.25rem', borderRadius: '0.75rem', border: `1px solid ${isOverdue ? '#fca5a5' : '#fde68a'}`, boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                        <div className="flex justify-between items-start" style={{ marginBottom: '1rem' }}>
+                          <div>
+                            <div style={{ fontWeight: 800, fontSize: '0.95rem', marginBottom: '0.25rem' }}>{tenancy.tenant.name}</div>
+                            <div className="text-muted" style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <span>Terminó el {tenancy.endDate ? new Date(tenancy.endDate).toLocaleDateString('es-CL') : 'N/A'}</span>
+                              <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: 'var(--border)' }}></span>
+                              <span style={{ color: statusColor, fontWeight: 700 }}>
+                                {isOverdue ? `${Math.abs(daysRemaining)} días de atraso` : `${daysRemaining} días restantes`}
+                              </span>
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Monto a Devolver</div>
+                            <div style={{ fontWeight: 900, color: '#111827', fontSize: '1.1rem' }}>
+                              ${Number(tenancy.securityDeposit).toLocaleString('es-CL')}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <button 
-                        className="btn btn-primary" 
-                        style={{ width: '100%', padding: '0.5rem', fontSize: '0.75rem', backgroundColor: '#f59e0b', border: 'none' }}
-                        onClick={async () => {
-                          if (window.confirm(`¿Confirmas que has devuelto la garantía de $${Number(tenancy.securityDeposit).toLocaleString('es-CL')} a ${tenancy.tenant.name}?`)) {
-                            try {
-                              await api.patch(`/properties/${property.id}/tenancy/${tenancy.id}/return-deposit`);
-                              queryClient.invalidateQueries({ queryKey: ['property', property.id] });
-                              toast.success('Garantía marcada como devuelta');
-                            } catch (e) {
-                              toast.error('Error al procesar la devolución');
+
+                        <div style={{ marginBottom: '1.25rem' }}>
+                          <div style={{ height: '6px', width: '100%', backgroundColor: '#f3f4f6', borderRadius: '3px', overflow: 'hidden', marginBottom: '0.5rem' }}>
+                            <div style={{ 
+                              height: '100%', 
+                              width: `${Math.min(100, (daysPassed / 45) * 100)}%`, 
+                              backgroundColor: statusColor,
+                              transition: 'width 0.5s ease'
+                            }}></div>
+                          </div>
+                          <div className="flex justify-between" style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                            <span>Día 1</span>
+                            <span>Día 45</span>
+                          </div>
+                        </div>
+
+                        <button 
+                          className="btn btn-primary" 
+                          style={{ width: '100%', padding: '0.6rem', fontSize: '0.75rem', backgroundColor: isOverdue ? '#ef4444' : '#f59e0b', border: 'none', fontWeight: 700 }}
+                          onClick={async () => {
+                            if (window.confirm(`¿Confirmas que has devuelto la garantía de $${Number(tenancy.securityDeposit).toLocaleString('es-CL')} a ${tenancy.tenant.name}?`)) {
+                              try {
+                                await api.patch(`/properties/${property.id}/tenancy/${tenancy.id}/return-deposit`);
+                                queryClient.invalidateQueries({ queryKey: ['property', property.id] });
+                                toast.success('Garantía marcada como devuelta');
+                              } catch (e) {
+                                toast.error('Error al procesar la devolución');
+                              }
                             }
-                          }
-                        }}
-                      >
-                        Marcar como DEVUELTA
-                      </button>
-                    </div>
-                  ))}
+                          }}
+                        >
+                          Marcar como DEVUELTA
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
