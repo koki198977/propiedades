@@ -31,6 +31,7 @@ import api from '@/api/axios';
 import { useState, useRef, useEffect } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import { formatDate, toLocalDateFormat } from '../../utils/dateUtils';
 
 // --- Validation Schemas ---
 const utilitySchema = z.object({
@@ -374,7 +375,7 @@ export default function PropertyDetailsPage() {
                   <div>
                     <h4 style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>Vencimiento Contrato</h4>
                     <p style={{ fontSize: '1.25rem', fontWeight: 600 }}>
-                      {property.contractEndDate ? new Date(property.contractEndDate).toLocaleDateString() : 'Indefinido'}
+                      {property.contractEndDate ? formatDate(property.contractEndDate) : 'Indefinido'}
                     </p>
                   </div>
                 </div>
@@ -445,7 +446,7 @@ export default function PropertyDetailsPage() {
                           <div>
                             <div style={{ fontWeight: 800, fontSize: '0.95rem', marginBottom: '0.25rem' }}>{tenancy.tenant.name}</div>
                             <div className="text-muted" style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                              <span>Terminó el {tenancy.endDate ? new Date(tenancy.endDate).toLocaleDateString('es-CL') : 'N/A'}</span>
+                              <span>Terminó el {tenancy.endDate ? formatDate(tenancy.endDate, { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A'}</span>
                               <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: 'var(--border)' }}></span>
                               <span style={{ color: statusColor, fontWeight: 700 }}>
                                 {isOverdue ? `${Math.abs(daysRemaining)} días de atraso` : `${daysRemaining} días restantes`}
@@ -529,7 +530,7 @@ export default function PropertyDetailsPage() {
                       <div>
                         <div style={{ fontWeight: 600 }}>{UtilityTypeLabels[util.type]}</div>
                         <div className="text-muted" style={{ fontSize: '0.75rem' }}>
-                          {util.billingMonth ? new Date(util.billingMonth).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }) : 'Recurrente'}
+                          {util.billingMonth ? formatDate(util.billingMonth, { month: 'long', year: 'numeric' }) : 'Recurrente'}
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
@@ -653,11 +654,11 @@ export default function PropertyDetailsPage() {
                     <div className="flex justify-between items-center">
                       <div>
                         <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>INICIO</div>
-                        <div style={{ fontWeight: 800 }}>{new Date(activeTenancy.startDate).toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
+                        <div style={{ fontWeight: 800 }}>{formatDate(activeTenancy.startDate)}</div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>TÉRMINO</div>
-                        <div style={{ fontWeight: 800 }}>{(activeTenancy.endDate || property.contractEndDate) ? new Date(activeTenancy.endDate || property.contractEndDate).toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' }) : 'Indefinido'}</div>
+                        <div style={{ fontWeight: 800 }}>{(activeTenancy.endDate || property.contractEndDate) ? formatDate(activeTenancy.endDate || property.contractEndDate) : 'Indefinido'}</div>
                       </div>
                     </div>
                   </div>
@@ -818,8 +819,14 @@ function AddUtilityForm({ propertyId, onDone }: { propertyId: string, onDone: ()
     mutationFn: async (data: any) => {
       // Si es recurrente, SOLO creamos el recordatorio pendiente para la fecha indicada
       if (isRecurring) {
-        const startDate = data.billingMonth ? new Date(data.billingMonth + '-01') : new Date();
-        startDate.setDate(dueDay);
+        let startDate: Date;
+        if (data.billingMonth) {
+          const [year, month] = data.billingMonth.split('-').map(Number);
+          startDate = new Date(year, month - 1, dueDay);
+        } else {
+          startDate = new Date();
+          startDate.setDate(dueDay);
+        }
 
         return api.post('/utilities/reminders', {
           propertyId,
@@ -938,7 +945,7 @@ function AddUtilityForm({ propertyId, onDone }: { propertyId: string, onDone: ()
             <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500 }}>
               💡 {frequency === ExpenseFrequency.MONTHLY 
                 ? 'Se generará un recordatorio todos los meses.' 
-                : `Se cobrará el día ${dueDay} del mes seleccionado y se repetirá según la frecuencia ${ExpenseFrequencyLabels[frequency].toLowerCase()}.`}
+                : `Se cobrará el día ${dueDay} del mes seleccionado y se repetirá según la frecuencia ${(ExpenseFrequencyLabels[frequency as ExpenseFrequency] || '').toLowerCase()}.`}
             </p>
           </div>
         )}
@@ -958,7 +965,7 @@ function RegisterPaymentForm({ tenancyId }: { tenancyId: string }) {
     resolver: zodResolver(paymentSchema),
     defaultValues: {
       propertyTenantId: tenancyId,
-      paymentDate: new Date().toISOString().split('T')[0],
+      paymentDate: toLocalDateFormat(),
       paymentMethod: PaymentMethod.TRANSFER,
       amount: 0,
     }
@@ -1044,7 +1051,7 @@ function EditPropertyForm({ property, onDone }: { property: PropertyDto, onDone:
       rol: property.rol ?? '',
       notes: property.notes ?? '',
       expectedRent: property.expectedRent ?? undefined,
-      contractEndDate: property.contractEndDate ? new Date(property.contractEndDate).toISOString().split('T')[0] : '',
+      contractEndDate: property.contractEndDate ? toLocalDateFormat(new Date(property.contractEndDate)) : '',
     }
   });
 
@@ -1250,7 +1257,7 @@ function AssignTenantForm({ propertyId, expectedRent, onDone }: { propertyId: st
 
   const { register, handleSubmit, setValue, watch } = useForm<AssignTenantDto>({
     defaultValues: {
-      startDate: new Date().toISOString().split('T')[0],
+      startDate: toLocalDateFormat(),
       monthlyRent: expectedRent || 350000,
       securityDeposit: expectedRent || 350000,
     }
@@ -1399,7 +1406,7 @@ function RecentPaymentsCard({ propertyId }: { propertyId: string }) {
                 ${Number(payment.amount).toLocaleString('es-CL')}
               </div>
               <div className="text-muted" style={{ fontSize: '0.75rem' }}>
-                {new Date(payment.paymentDate).toLocaleDateString()} • {payment.paymentMethod}
+                {formatDate(payment.paymentDate)} • {payment.paymentMethod}
               </div>
             </div>
             <button 
@@ -1538,10 +1545,10 @@ function ReminderItem({ r, onPay, onDelete, isPaying }: { r: ExpenseReminderDto,
         <div>
           <div style={{ fontWeight: 800, fontSize: '1rem', marginBottom: '0.25rem' }}>{r.title}</div>
           <div className="flex gap-2 items-center">
-            <span className="text-muted" style={{ fontSize: '0.75rem' }}>{ExpenseFrequencyLabels[r.frequency]}</span>
+            <span className="text-muted" style={{ fontSize: '0.75rem' }}>{ExpenseFrequencyLabels[r.frequency as ExpenseFrequency]}</span>
             <span style={{ fontSize: '0.75rem', fontWeight: 700, color: isOverdue ? 'var(--danger)' : 'var(--text-muted)' }}>
               {isOverdue ? '⚠️ Vencido: ' : '📅 Vence: '}
-              {dueDate.toLocaleDateString('es-CL', { day: '2-digit', month: 'long' })}
+              {formatDate(r.nextDueDate, { day: '2-digit', month: 'long' })}
             </span>
           </div>
         </div>

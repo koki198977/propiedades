@@ -4,6 +4,7 @@ import { PaymentDto, PaymentMethodLabels } from '@propiedades/types';
 import { useOrganization } from '../../providers/OrganizationProvider';
 import api from '@/api/axios';
 import toast from 'react-hot-toast';
+import { formatDate } from '../../utils/dateUtils';
 
 export default function PaymentsPage() {
   const queryClient = useQueryClient();
@@ -166,7 +167,7 @@ export default function PaymentsPage() {
                 ) : currentPayments.map((payment) => (
                   <tr key={payment.id} style={{ borderTop: '1px solid var(--border-light)' }}>
                     <td style={{ padding: '1.25rem 1.5rem' }}>
-                      <div style={{ fontWeight: 600 }}>{new Date(payment.paymentDate).toLocaleDateString('es-CL')}</div>
+                      <div style={{ fontWeight: 600 }}>{formatDate(payment.paymentDate)}</div>
                       <div className="text-muted" style={{ fontSize: '0.75rem' }}>{payment.notes || 'Arriendo'}</div>
                     </td>
                     <td style={{ padding: '1.25rem 1.5rem' }}>

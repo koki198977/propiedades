@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import { FinancialStatementDto, UtilityType, UtilityTypeLabels } from '@propiedades/types';
+import { formatDate, toLocalDateFormat } from '../../utils/dateUtils';
 
 // Componente para una tabla paginada y con búsqueda
 function DataTable<T extends { id: string | number; date: string; amount: number }>({ 
@@ -206,8 +207,8 @@ function WithdrawalModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => 
 export default function FinancialReportsPage() {
   const [dateRange, setDateRange] = useState<'today' | 'week' | 'month' | 'year' | 'all' | 'custom'>('month');
   const [customRange, setCustomRange] = useState({
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
+    startDate: toLocalDateFormat(),
+    endDate: toLocalDateFormat(),
   });
 
   const [isWithdrawalModalOpen, setIsWithdrawalModalOpen] = useState(false);
@@ -240,7 +241,7 @@ export default function FinancialReportsPage() {
         return `startDate=${customRange.startDate}&endDate=${customRange.endDate}`;
     }
 
-    return `startDate=${start.toISOString().split('T')[0]}&endDate=${end.toISOString().split('T')[0]}`;
+    return `startDate=${toLocalDateFormat(start)}&endDate=${toLocalDateFormat(end)}`;
   };
 
   const { data, isLoading } = useQuery<FinancialStatementDto>({
@@ -357,7 +358,7 @@ export default function FinancialReportsPage() {
             footerColor="var(--success)"
             renderRow={(item: any) => (
               <tr key={item.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                <td style={{ padding: '1rem', fontSize: '0.875rem' }}>{new Date(item.date).toLocaleDateString('es-CL')}</td>
+                <td style={{ padding: '1rem', fontSize: '0.875rem' }}>{formatDate(item.date)}</td>
                 <td style={{ padding: '1rem', fontSize: '0.875rem' }}>{item.propertyAddress}</td>
                 <td style={{ padding: '1rem', fontSize: '0.875rem' }}>{item.tenantName}</td>
                 <td style={{ padding: '1rem', fontSize: '0.875rem' }}>
