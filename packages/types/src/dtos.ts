@@ -293,7 +293,7 @@ export interface TenantDto {
 
 export interface AssignTenantDto {
   tenantId: string
-  startDate: string        // ISO date
+  startDate?: string        // ISO date
   endDate?: string         // ISO date
   monthlyRent: number
   securityDeposit?: number

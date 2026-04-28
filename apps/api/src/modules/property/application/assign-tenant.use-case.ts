@@ -16,6 +16,10 @@ export class AssignTenantUseCase {
       throw new Error('Esta propiedad no pertenece a tu espacio de trabajo actual');
     }
 
+    if (!dto.startDate) {
+      dto.startDate = new Date().toISOString();
+    }
+
     return this.propertyRepo.assignTenant(propertyId, dto);
   }
 }

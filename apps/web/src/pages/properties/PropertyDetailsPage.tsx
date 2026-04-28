@@ -1406,7 +1406,7 @@ function AssignTenantForm({ propertyId, expectedRent, onDone }: { propertyId: st
 
   const { register, handleSubmit, setValue, watch } = useForm<AssignTenantDto>({
     defaultValues: {
-      startDate: toLocalDateFormat(),
+      startDate: '',
       monthlyRent: expectedRent || 350000,
       securityDeposit: expectedRent || 350000,
     }
@@ -1423,6 +1423,9 @@ function AssignTenantForm({ propertyId, expectedRent, onDone }: { propertyId: st
 
   const { mutate, isPending } = useMutation({
     mutationFn: async (data: AssignTenantDto) => {
+      if (!data.startDate) {
+        data.startDate = toLocalDateFormat();
+      }
       const resp = await api.post(`/properties/${propertyId}/assign-tenant`, data);
       return resp.data;
     },
@@ -1486,7 +1489,8 @@ function AssignTenantForm({ propertyId, expectedRent, onDone }: { propertyId: st
       <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
         <div className="flex flex-col gap-2">
           <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Fecha de Inicio</label>
-          <input {...register('startDate')} type="date" required style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', width: '100%', fontSize: '0.9rem' }} />
+          <input {...register('startDate')} type="date" style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', width: '100%', fontSize: '0.9rem' }} />
+          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Opcional (Por defecto hoy)</span>
         </div>
         <div className="flex flex-col gap-2">
           <div className="flex justify-between items-center">
