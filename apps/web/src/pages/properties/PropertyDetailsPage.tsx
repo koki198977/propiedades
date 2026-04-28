@@ -666,25 +666,6 @@ export default function PropertyDetailsPage() {
                     </div>
                   </div>
 
-                  {activeTenancy.securityDeposit && !activeTenancy.isSecurityDepositReturned && (
-                    <button 
-                      className="btn btn-outline" 
-                      style={{ width: '100%', marginBottom: '1.5rem', fontSize: '0.85rem', color: '#f59e0b', borderColor: '#f59e0b' }}
-                      onClick={async () => {
-                        if (window.confirm('¿Confirmas que has devuelto el mes de garantía al arrendatario?')) {
-                          try {
-                            await api.patch(`/properties/${property.id}/tenancy/${activeTenancy.id}/return-deposit`);
-                            queryClient.invalidateQueries({ queryKey: ['property', property.id] });
-                            toast.success('Garantía marcada como devuelta');
-                          } catch (e) {
-                            toast.error('Error al procesar la devolución');
-                          }
-                        }
-                      }}
-                    >
-                      ↩️ Marcar Garantía como Devuelta
-                    </button>
-                  )}
 
                   <div className="flex flex-col gap-2">
                     <RegisterPaymentForm tenancyId={activeTenancy.id} />
