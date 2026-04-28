@@ -865,156 +865,158 @@ function AddUtilityForm({ propertyId, onDone }: { propertyId: string, onDone: ()
   });
 
   return (
-    <form onSubmit={handleSubmit((data) => mutate(data))} className="flex flex-col gap-4">
-      <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-        <div className="flex flex-col gap-2 relative">
-          <div className="flex justify-between items-center">
-            <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Tipo de Servicio</label>
-            <button type="button" onClick={() => setIsManageCategoriesOpen(true)} style={{ fontSize: '0.65rem', color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
-              Administrar
-            </button>
-          </div>
-          <select 
-            value={watch('type') === UtilityType.OTHER && customCategories?.some(c => c.name === watch('title')) ? `CUSTOM_${watch('title')}` : watch('type')}
-            onChange={(e) => {
-              const val = e.target.value;
-              if (val.startsWith('CUSTOM_')) {
-                setValue('type', UtilityType.OTHER);
-                setValue('title', val.replace('CUSTOM_', ''));
-              } else {
-                setValue('type', val as UtilityType);
-                if (val !== UtilityType.OTHER) {
-                  setValue('title', '');
+    <>
+      <form onSubmit={handleSubmit((data) => mutate(data))} className="flex flex-col gap-4">
+        <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div className="flex flex-col gap-2 relative">
+            <div className="flex justify-between items-center">
+              <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Tipo de Servicio</label>
+              <button type="button" onClick={() => setIsManageCategoriesOpen(true)} style={{ fontSize: '0.65rem', color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+                Administrar
+              </button>
+            </div>
+            <select 
+              value={watch('type') === UtilityType.OTHER && customCategories?.some(c => c.name === watch('title')) ? `CUSTOM_${watch('title')}` : watch('type')}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val.startsWith('CUSTOM_')) {
+                  setValue('type', UtilityType.OTHER);
+                  setValue('title', val.replace('CUSTOM_', ''));
+                } else {
+                  setValue('type', val as UtilityType);
+                  if (val !== UtilityType.OTHER) {
+                    setValue('title', '');
+                  }
                 }
-              }
-            }}
-            style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', fontSize: '0.875rem', width: '100%' }}
-          >
-            <optgroup label="Sistema">
-              {Object.entries(UtilityTypeLabels)
-                .filter(([val]) => val !== UtilityType.OTHER)
-                .map(([val, label]) => (
-                <option key={val} value={val}>{label}</option>
-              ))}
-            </optgroup>
-            {customCategories && customCategories.length > 0 && (
-              <optgroup label="Tus Categorías">
-                {customCategories.map(c => (
-                  <option key={`CUSTOM_${c.name}`} value={`CUSTOM_${c.name}`}>{c.name}</option>
+              }}
+              style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', fontSize: '0.875rem', width: '100%' }}
+            >
+              <optgroup label="Sistema">
+                {Object.entries(UtilityTypeLabels)
+                  .filter(([val]) => val !== UtilityType.OTHER)
+                  .map(([val, label]) => (
+                  <option key={val} value={val}>{label}</option>
                 ))}
               </optgroup>
-            )}
-            <optgroup label="Otro">
-              <option value={UtilityType.OTHER}>Otro (Especificar...)</option>
-            </optgroup>
-          </select>
-        </div>
-        <div className="flex flex-col gap-2">
-          <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Monto ($)</label>
-          <input {...register('amount', { valueAsNumber: true })} type="number" style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', fontSize: '0.875rem', width: '100%' }} />
-          {errors.amount && <span style={{ color: 'var(--danger)', fontSize: '0.7rem' }}>{errors.amount.message}</span>}
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>
-          {watch('type') === UtilityType.OTHER ? 'Nombre del Servicio/Gasto*' : 'Descripción (opcional)'}
-        </label>
-        <input 
-          {...register('title', { required: watch('type') === UtilityType.OTHER ? 'Debes ingresar un nombre' : false })} 
-          placeholder={watch('type') === UtilityType.OTHER ? 'Ej: Jardinería, Pintura...' : 'Ej: Contribuciones 1er Trimestre'} 
-          style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', fontSize: '0.875rem' }} 
-        />
-        {errors.title && <span style={{ color: 'var(--danger)', fontSize: '0.7rem' }}>{errors.title.message}</span>}
-      </div>
-
-      <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-        <div className="flex items-center gap-2">
-          <input {...register('isIncludedInRent')} type="checkbox" id="included" />
-          <label htmlFor="included" style={{ fontSize: '0.75rem' }}>Incluido en arriendo</label>
-        </div>
-        {!isRecurring && (
-          <div className="flex flex-col gap-1">
-            <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Mes de pago actual</label>
-            <input {...register('billingMonth')} type="month" style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', fontSize: '0.875rem', width: '100%' }} />
-          </div>
-        )}
-      </div>
-
-      {/* Recurrence Selector */}
-      <div style={{ padding: '1.25rem', backgroundColor: 'rgba(56, 122, 223, 0.05)', borderRadius: '1rem', border: '1px dashed var(--primary-light)' }}>
-        <div className="flex items-center gap-2" style={{ marginBottom: isRecurring ? '1rem' : 0 }}>
-          <input 
-            type="checkbox" 
-            id="recurring" 
-            checked={isRecurring} 
-            onChange={(e) => setIsRecurring(e.target.checked)} 
-          />
-          <label htmlFor="recurring" style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--primary)' }}>Registrar como Gasto Periódico</label>
-        </div>
-
-        {isRecurring && (
-          <div className="flex flex-col gap-3 animate-fade-in">
-            <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <div className="flex flex-col gap-1">
-                <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Frecuencia</label>
-                <select 
-                  value={frequency} 
-                  onChange={(e) => setFrequency(e.target.value as ExpenseFrequency)}
-                  style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', fontSize: '0.875rem', width: '100%' }}
-                >
-                  {Object.entries(ExpenseFrequencyLabels).map(([val, label]) => (
-                    <option key={val} value={val}>{label}</option>
+              {customCategories && customCategories.length > 0 && (
+                <optgroup label="Tus Categorías">
+                  {customCategories.map(c => (
+                    <option key={`CUSTOM_${c.name}`} value={`CUSTOM_${c.name}`}>{c.name}</option>
                   ))}
-                </select>
-              </div>
-              <div className="flex flex-col gap-1">
-                <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Día de Pago</label>
-                <input 
-                  type="number" 
-                  min={1} 
-                  max={31} 
-                  value={dueDay} 
-                  onChange={(e) => setDueDay(Number(e.target.value))} 
-                  style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', fontSize: '0.875rem', width: '100%' }}
-                />
-              </div>
-            </div>
-
-            {frequency !== ExpenseFrequency.MONTHLY && (
-              <div className="flex flex-col gap-1" style={{ padding: '0.75rem', backgroundColor: 'white', borderRadius: '0.5rem', border: '1px solid var(--border-light)' }}>
-                <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Mes del primer cobro</label>
-                <input 
-                  {...register('billingMonth')} 
-                  type="month" 
-                  required 
-                  style={{ padding: '0.5rem', borderRadius: '0.4rem', border: '1px solid var(--border)', fontSize: '0.8125rem', width: '100%' }} 
-                />
-                <p style={{ fontSize: '0.65rem', color: 'var(--primary)', marginTop: '0.25rem' }}>
-                   * El mes elegido define en qué momento del año se repite el cobro.
-                </p>
-              </div>
-            )}
-
-            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-              💡 {frequency === ExpenseFrequency.MONTHLY 
-                ? 'Se generará un recordatorio todos los meses.' 
-                : `Se cobrará el día ${dueDay} del mes seleccionado y se repetirá según la frecuencia ${(ExpenseFrequencyLabels[frequency as ExpenseFrequency] || '').toLowerCase()}.`}
-            </p>
+                </optgroup>
+              )}
+              <optgroup label="Otro">
+                <option value={UtilityType.OTHER}>Otro (Especificar...)</option>
+              </optgroup>
+            </select>
           </div>
-        )}
-      </div>
+          <div className="flex flex-col gap-2">
+            <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Monto Pagado ($)</label>
+            <input {...register('amount', { valueAsNumber: true })} type="number" min={0} style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', fontSize: '0.875rem' }} />
+            {errors.amount && <span style={{ color: 'var(--danger)', fontSize: '0.7rem' }}>{errors.amount.message}</span>}
+          </div>
+        </div>
 
-      <button disabled={isPending} className="btn btn-primary" style={{ height: '3.5rem', fontSize: '0.9rem', fontWeight: 700 }}>
-        {isPending ? 'Procesando...' : 'Confirmar y Guardar'}
-      </button>
+        <div className="flex flex-col gap-2">
+          <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>
+            {watch('type') === UtilityType.OTHER ? 'Nombre del Servicio/Gasto*' : 'Descripción (opcional)'}
+          </label>
+          <input 
+            {...register('title', { required: watch('type') === UtilityType.OTHER ? 'Debes ingresar un nombre' : false })} 
+            placeholder={watch('type') === UtilityType.OTHER ? 'Ej: Jardinería, Pintura...' : 'Ej: Contribuciones 1er Trimestre'} 
+            style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', fontSize: '0.875rem' }} 
+          />
+          {errors.title && <span style={{ color: 'var(--danger)', fontSize: '0.7rem' }}>{errors.title.message}</span>}
+        </div>
+
+        <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div className="flex items-center gap-2">
+            <input {...register('isIncludedInRent')} type="checkbox" id="included" />
+            <label htmlFor="included" style={{ fontSize: '0.75rem' }}>Incluido en arriendo</label>
+          </div>
+          {!isRecurring && (
+            <div className="flex flex-col gap-1">
+              <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Mes de pago actual</label>
+              <input {...register('billingMonth')} type="month" style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', fontSize: '0.875rem', width: '100%' }} />
+            </div>
+          )}
+        </div>
+
+        {/* Recurrence Selector */}
+        <div style={{ padding: '1.25rem', backgroundColor: 'rgba(56, 122, 223, 0.05)', borderRadius: '1rem', border: '1px dashed var(--primary-light)' }}>
+          <div className="flex items-center gap-2" style={{ marginBottom: isRecurring ? '1rem' : 0 }}>
+            <input 
+              type="checkbox" 
+              id="recurring" 
+              checked={isRecurring} 
+              onChange={(e) => setIsRecurring(e.target.checked)} 
+            />
+            <label htmlFor="recurring" style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--primary)' }}>Registrar como Gasto Periódico</label>
+          </div>
+
+          {isRecurring && (
+            <div className="flex flex-col gap-3 animate-fade-in">
+              <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="flex flex-col gap-1">
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Frecuencia</label>
+                  <select 
+                    value={frequency} 
+                    onChange={(e) => setFrequency(e.target.value as ExpenseFrequency)}
+                    style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', fontSize: '0.875rem', width: '100%' }}
+                  >
+                    {Object.entries(ExpenseFrequencyLabels).map(([val, label]) => (
+                      <option key={val} value={val}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Día de Pago</label>
+                  <input 
+                    type="number" 
+                    min={1} 
+                    max={31} 
+                    value={dueDay} 
+                    onChange={(e) => setDueDay(Number(e.target.value))} 
+                    style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', fontSize: '0.875rem', width: '100%' }}
+                  />
+                </div>
+              </div>
+
+              {frequency !== ExpenseFrequency.MONTHLY && (
+                <div className="flex flex-col gap-1" style={{ padding: '0.75rem', backgroundColor: 'white', borderRadius: '0.5rem', border: '1px solid var(--border-light)' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Mes del primer cobro</label>
+                  <input 
+                    {...register('billingMonth')} 
+                    type="month" 
+                    required 
+                    style={{ padding: '0.5rem', borderRadius: '0.4rem', border: '1px solid var(--border)', fontSize: '0.8125rem', width: '100%' }} 
+                  />
+                  <p style={{ fontSize: '0.65rem', color: 'var(--primary)', marginTop: '0.25rem' }}>
+                    * El mes elegido define en qué momento del año se repite el cobro.
+                  </p>
+                </div>
+              )}
+
+              <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                💡 {frequency === ExpenseFrequency.MONTHLY 
+                  ? 'Se generará un recordatorio todos los meses.' 
+                  : `Se cobrará el día ${dueDay} del mes seleccionado y se repetirá según la frecuencia ${(ExpenseFrequencyLabels[frequency as ExpenseFrequency] || '').toLowerCase()}.`}
+              </p>
+            </div>
+          )}
+        </div>
+
+        <button disabled={isPending} className="btn btn-primary" style={{ height: '3.5rem', fontSize: '0.9rem', fontWeight: 700 }}>
+          {isPending ? 'Procesando...' : 'Confirmar y Guardar'}
+        </button>
+      </form>
 
       <ManageCategoriesModal 
         isOpen={isManageCategoriesOpen} 
         onClose={() => setIsManageCategoriesOpen(false)} 
         customCategories={customCategories || []} 
       />
-    </form>
+    </>
   );
 }
 
