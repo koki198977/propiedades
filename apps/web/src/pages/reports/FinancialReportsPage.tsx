@@ -375,11 +375,12 @@ export default function FinancialReportsPage() {
             <DataTable 
               title="Egresos (Servicios y Retiros)"
               data={data.expenses.items}
-              columns={['Item / Descripción', 'Propiedad', 'Monto']}
+              columns={['Fecha', 'Item / Descripción', 'Propiedad', 'Monto']}
               totalLabel="TOTAL EGRESOS"
               footerColor="var(--danger)"
               renderRow={(item: any) => (
                 <tr key={item.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                  <td style={{ padding: '1rem', fontSize: '0.875rem' }}>{formatDate(item.date)}</td>
                   <td style={{ padding: '1rem', fontSize: '0.875rem' }}>
                     {item.type === UtilityType.OTHER ? (
                       <div>
@@ -403,10 +404,11 @@ export default function FinancialReportsPage() {
             <DataTable 
               title="Costos de Mantenimiento / Inversión"
               data={data.costs.items}
-              columns={['Item / Descripción', 'Propiedad', 'Monto']}
+              columns={['Fecha', 'Item / Descripción', 'Propiedad', 'Monto']}
               totalLabel="TOTAL COSTOS"
               renderRow={(item: any) => (
                 <tr key={item.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                  <td style={{ padding: '1rem', fontSize: '0.875rem' }}>{formatDate(item.date)}</td>
                   <td style={{ padding: '1rem', fontSize: '0.875rem' }}>
                     {item.type === UtilityType.OTHER ? (
                       <div style={{ fontWeight: 600 }}>{item.description || 'Gastos de Propiedad'}</div>
