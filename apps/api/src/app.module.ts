@@ -15,6 +15,7 @@ import { NotificationModule } from './modules/notification/infrastructure/notifi
 import { OrganizationModule } from './modules/organization/infrastructure/organization.module'
 import { AdminModule } from './modules/admin/admin.module'
 import { BillingModule } from './modules/billing/infrastructure/billing.module'
+import { ExpenseCategoryModule } from './modules/expense-category/infrastructure/expense-category.module'
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { BillingModule } from './modules/billing/infrastructure/billing.module'
     CloudinaryModule,
     NotificationModule,
     BillingModule,
+    ExpenseCategoryModule,
   ],
 })
 export class AppModule {}

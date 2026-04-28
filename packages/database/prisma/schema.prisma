@@ -113,8 +113,25 @@ model Organization {
   bankAccountRut     String?
   bankAccountEmail   String?
 
+  expenseCategories ExpenseCategory[]
+
   @@map("organizations")
 }
+
+model ExpenseCategory {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("expense_categories")
+}
+
 
 model OrganizationMember {
   id             String           @id @default(uuid())

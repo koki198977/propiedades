@@ -10,8 +10,10 @@ import { DeleteExpenseReminderUseCase } from '../application/delete-expense-remi
 import { PayExpenseReminderUseCase } from '../application/pay-expense-reminder.use-case';
 import { UTILITY_REPOSITORY } from '../domain/utility.repository.port';
 import { PrismaUtilityRepository } from './prisma-utility.repository';
+import { ExpenseCategoryModule } from '../../expense-category/infrastructure/expense-category.module';
 
 @Module({
+  imports: [ExpenseCategoryModule],
   controllers: [UtilityController],
   providers: [
     CreateUtilityUseCase,

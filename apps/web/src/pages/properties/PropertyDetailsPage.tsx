@@ -24,6 +24,7 @@ import {
   CreateExpenseReminderDto,
   OrganizationRole,
   PaginatedResponse,
+  ExpenseCategoryDto,
 } from '@propiedades/types';
 import toast from 'react-hot-toast';
 import { useOrganization } from '../../providers/OrganizationProvider';
@@ -806,7 +807,7 @@ function AddUtilityForm({ propertyId, onDone }: { propertyId: string, onDone: ()
   const [frequency, setFrequency] = useState<ExpenseFrequency>(ExpenseFrequency.MONTHLY);
   const [dueDay, setDueDay] = useState(new Date().getDate());
   
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<CreateUtilityDto & { title?: string }>({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<CreateUtilityDto & { title?: string }>({
     resolver: zodResolver(utilitySchema),
     defaultValues: {
       type: UtilityType.ELECTRICITY,
@@ -815,6 +816,16 @@ function AddUtilityForm({ propertyId, onDone }: { propertyId: string, onDone: ()
       title: '',
     }
   });
+
+  const { data: customCategories } = useQuery({
+    queryKey: ['expense-categories'],
+    queryFn: async () => {
+      const resp = await api.get('/expense-categories');
+      return resp.data as ExpenseCategoryDto[];
+    }
+  });
+
+  const [isManageCategoriesOpen, setIsManageCategoriesOpen] = useState(false);
 
 
   const { mutate, isPending } = useMutation({
@@ -856,12 +867,46 @@ function AddUtilityForm({ propertyId, onDone }: { propertyId: string, onDone: ()
   return (
     <form onSubmit={handleSubmit((data) => mutate(data))} className="flex flex-col gap-4">
       <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-        <div className="flex flex-col gap-2">
-          <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Tipo de Servicio</label>
-          <select {...register('type')} style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', fontSize: '0.875rem', width: '100%' }}>
-            {Object.entries(UtilityTypeLabels).map(([val, label]) => (
-              <option key={val} value={val}>{label}</option>
-            ))}
+        <div className="flex flex-col gap-2 relative">
+          <div className="flex justify-between items-center">
+            <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Tipo de Servicio</label>
+            <button type="button" onClick={() => setIsManageCategoriesOpen(true)} style={{ fontSize: '0.65rem', color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+              Administrar
+            </button>
+          </div>
+          <select 
+            value={watch('type') === UtilityType.OTHER && customCategories?.some(c => c.name === watch('title')) ? `CUSTOM_${watch('title')}` : watch('type')}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val.startsWith('CUSTOM_')) {
+                setValue('type', UtilityType.OTHER);
+                setValue('title', val.replace('CUSTOM_', ''));
+              } else {
+                setValue('type', val as UtilityType);
+                if (val !== UtilityType.OTHER) {
+                  setValue('title', '');
+                }
+              }
+            }}
+            style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', fontSize: '0.875rem', width: '100%' }}
+          >
+            <optgroup label="Sistema">
+              {Object.entries(UtilityTypeLabels)
+                .filter(([val]) => val !== UtilityType.OTHER)
+                .map(([val, label]) => (
+                <option key={val} value={val}>{label}</option>
+              ))}
+            </optgroup>
+            {customCategories && customCategories.length > 0 && (
+              <optgroup label="Tus Categorías">
+                {customCategories.map(c => (
+                  <option key={`CUSTOM_${c.name}`} value={`CUSTOM_${c.name}`}>{c.name}</option>
+                ))}
+              </optgroup>
+            )}
+            <optgroup label="Otro">
+              <option value={UtilityType.OTHER}>Otro (Especificar...)</option>
+            </optgroup>
           </select>
         </div>
         <div className="flex flex-col gap-2">
@@ -963,6 +1008,12 @@ function AddUtilityForm({ propertyId, onDone }: { propertyId: string, onDone: ()
       <button disabled={isPending} className="btn btn-primary" style={{ height: '3.5rem', fontSize: '0.9rem', fontWeight: 700 }}>
         {isPending ? 'Procesando...' : 'Confirmar y Guardar'}
       </button>
+
+      <ManageCategoriesModal 
+        isOpen={isManageCategoriesOpen} 
+        onClose={() => setIsManageCategoriesOpen(false)} 
+        customCategories={customCategories || []} 
+      />
     </form>
   );
 }
@@ -1038,6 +1089,93 @@ function RegisterPaymentForm({ tenancyId }: { tenancyId: string }) {
         {isPending ? 'Procesando...' : 'Registrar Pago de Arriendo'}
       </button>
     </form>
+  );
+}
+
+function ManageCategoriesModal({ isOpen, onClose, customCategories }: { isOpen: boolean; onClose: () => void; customCategories: ExpenseCategoryDto[] }) {
+  const queryClient = useQueryClient();
+  const [newName, setNewName] = useState('');
+
+  const { mutate: createCategory, isPending: isCreating } = useMutation({
+    mutationFn: async (name: string) => {
+      const resp = await api.post('/expense-categories', { name });
+      return resp.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expense-categories'] });
+      setNewName('');
+      toast.success('Categoría agregada');
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Error al agregar categoría');
+    }
+  });
+
+  const { mutate: toggleCategory, isPending: isToggling } = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string, isActive: boolean }) => {
+      const resp = await api.patch(`/expense-categories/${id}`, { isActive });
+      return resp.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expense-categories'] });
+    }
+  });
+
+  if (!isOpen) return null;
+
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '1rem', width: '100%', maxWidth: '400px' }}>
+        <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem' }}>
+          <h3 className="font-heading" style={{ fontSize: '1.25rem' }}>Administrar Categorías</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
+        </div>
+
+        <form onSubmit={(e) => { e.preventDefault(); if (newName.trim()) createCategory(newName); }} className="flex gap-2" style={{ marginBottom: '1.5rem' }}>
+          <input 
+            value={newName} 
+            onChange={(e) => setNewName(e.target.value)} 
+            placeholder="Nueva categoría..." 
+            style={{ flex: 1, padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', fontSize: '0.875rem' }} 
+          />
+          <button type="submit" disabled={isCreating || !newName.trim()} className="btn btn-primary" style={{ padding: '0.6rem 1rem' }}>
+            {isCreating ? '...' : 'Agregar'}
+          </button>
+        </form>
+
+        <div className="flex flex-col gap-2" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+          {customCategories.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+              No hay categorías personalizadas.
+            </div>
+          ) : (
+            customCategories.map(cat => (
+              <div key={cat.id} className="flex justify-between items-center" style={{ padding: '0.75rem', backgroundColor: 'var(--bg-surface)', borderRadius: '0.5rem', border: '1px solid var(--border)' }}>
+                <span style={{ fontSize: '0.875rem', fontWeight: 600, color: cat.isActive ? 'inherit' : 'var(--text-muted)', textDecoration: cat.isActive ? 'none' : 'line-through' }}>
+                  {cat.name}
+                </span>
+                <button 
+                  onClick={() => toggleCategory({ id: cat.id, isActive: !cat.isActive })}
+                  disabled={isToggling}
+                  style={{ 
+                    fontSize: '0.75rem', 
+                    padding: '0.25rem 0.5rem', 
+                    borderRadius: '0.25rem', 
+                    border: 'none', 
+                    backgroundColor: cat.isActive ? '#fee2e2' : '#d1fae5', 
+                    color: cat.isActive ? '#ef4444' : '#10b981',
+                    cursor: 'pointer',
+                    fontWeight: 600
+                  }}
+                >
+                  {cat.isActive ? 'Desactivar' : 'Activar'}
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 

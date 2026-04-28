@@ -217,6 +217,24 @@ export interface MonthlyCostDto {
   breakdown: UtilityDto[]
 }
 
+export interface ExpenseCategoryDto {
+  id: string
+  organizationId: string
+  name: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateExpenseCategoryDto {
+  name: string
+}
+
+export interface UpdateExpenseCategoryDto {
+  name?: string
+  isActive?: boolean
+}
+
 // ============================================================
 // TENANT (Arrendatario)
 // ============================================================
