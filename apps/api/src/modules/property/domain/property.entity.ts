@@ -30,7 +30,7 @@ export class Property {
       createdAt: Date;
     }> = [],
     public readonly activeTenant?: any | null,
-    public readonly pendingGaranties: any[] = [],
+    public readonly pendingSecurityDeposits: any[] = [],
     public readonly photos: Array<{
       id: string;
       url: string;
