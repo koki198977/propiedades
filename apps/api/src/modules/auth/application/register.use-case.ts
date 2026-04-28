@@ -65,7 +65,7 @@ export class RegisterUseCase {
     return {
       accessToken: this.jwtService.sign(payload, {
         secret: this.configService.get('JWT_SECRET'),
-        expiresIn: this.configService.get('JWT_EXPIRES_IN', '15m'),
+        expiresIn: this.configService.get('JWT_EXPIRES_IN', '7d'),
       }),
       refreshToken: this.jwtService.sign(payload, {
         secret: this.configService.get('JWT_REFRESH_SECRET'),

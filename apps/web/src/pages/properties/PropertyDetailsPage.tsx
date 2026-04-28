@@ -528,7 +528,9 @@ export default function PropertyDetailsPage() {
                   {utilities.map((util) => (
                     <div key={util.id} className="flex justify-between items-center" style={{ padding: '1.25rem', backgroundColor: 'var(--bg-surface)', borderRadius: '0.75rem' }}>
                       <div>
-                        <div style={{ fontWeight: 600 }}>{UtilityTypeLabels[util.type]}</div>
+                        <div style={{ fontWeight: 600 }}>
+                          {util.type === 'OTHER' && util.notes ? util.notes : UtilityTypeLabels[util.type]}
+                        </div>
                         <div className="text-muted" style={{ fontSize: '0.75rem' }}>
                           {util.billingMonth ? formatDate(util.billingMonth, { month: 'long', year: 'numeric' }) : 'Recurrente'}
                         </div>
@@ -804,7 +806,7 @@ function AddUtilityForm({ propertyId, onDone }: { propertyId: string, onDone: ()
   const [frequency, setFrequency] = useState<ExpenseFrequency>(ExpenseFrequency.MONTHLY);
   const [dueDay, setDueDay] = useState(new Date().getDate());
   
-  const { register, handleSubmit, formState: { errors } } = useForm<CreateUtilityDto & { title?: string }>({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<CreateUtilityDto & { title?: string }>({
     resolver: zodResolver(utilitySchema),
     defaultValues: {
       type: UtilityType.ELECTRICITY,
@@ -870,8 +872,15 @@ function AddUtilityForm({ propertyId, onDone }: { propertyId: string, onDone: ()
       </div>
 
       <div className="flex flex-col gap-2">
-        <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Descripción (opcional)</label>
-        <input {...register('title')} placeholder="Ej: Contribuciones 1er Trimestre" style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', fontSize: '0.875rem' }} />
+        <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>
+          {watch('type') === UtilityType.OTHER ? 'Nombre del Servicio/Gasto*' : 'Descripción (opcional)'}
+        </label>
+        <input 
+          {...register('title', { required: watch('type') === UtilityType.OTHER ? 'Debes ingresar un nombre' : false })} 
+          placeholder={watch('type') === UtilityType.OTHER ? 'Ej: Jardinería, Pintura...' : 'Ej: Contribuciones 1er Trimestre'} 
+          style={{ padding: '0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)', fontSize: '0.875rem' }} 
+        />
+        {errors.title && <span style={{ color: 'var(--danger)', fontSize: '0.7rem' }}>{errors.title.message}</span>}
       </div>
 
       <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
