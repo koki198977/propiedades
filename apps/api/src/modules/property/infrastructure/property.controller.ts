@@ -10,7 +10,7 @@ import { UpdatePropertyUseCase } from '../application/update-property.use-case';
 import { AssignTenantUseCase } from '../application/assign-tenant.use-case';
 import { DeletePropertyUseCase } from '../application/delete-property.use-case';
 import { PropertyMeterService } from './property-meter.service';
-import { CreatePropertyDto, UpdatePropertyDto, AssignTenantDto, CreatePropertyMeterDto, ReorderPhotosDto, OrganizationRole, TerminateTenancyDto } from '@propiedades/types';
+import { CreatePropertyDto, UpdatePropertyDto, AssignTenantDto, CreatePropertyMeterDto, ReorderPhotosDto, OrganizationRole, TerminateTenancyDto, ReturnDepositDto } from '@propiedades/types';
 import { CloudinaryService } from '../../../shared/infrastructure/cloudinary/cloudinary.service';
 import { IPropertyRepository, PROPERTY_REPOSITORY } from '../domain/property.repository.port';
 
@@ -142,8 +142,8 @@ export class PropertyController {
   @Patch(':id/tenancy/:tenancyId/return-deposit')
   @RequireRole(OrganizationRole.ADMIN, OrganizationRole.EDITOR)
   @ApiOperation({ summary: 'Marcar el mes de garantía como devuelto' })
-  async returnDeposit(@Param('tenancyId') tenancyId: string) {
-    return this.propertyRepo.returnSecurityDeposit(tenancyId);
+  async returnDeposit(@Param('tenancyId') tenancyId: string, @Request() req: any, @Body() dto: ReturnDepositDto) {
+    return this.propertyRepo.returnSecurityDeposit(tenancyId, req.organizationId, req.user.id, dto);
   }
 
   @Patch(':id/tenancy/:tenancyId/security-deposit')
@@ -156,7 +156,7 @@ export class PropertyController {
   @Patch(':id/tenancy/:tenancyId/terminate')
   @RequireRole(OrganizationRole.ADMIN, OrganizationRole.EDITOR)
   @ApiOperation({ summary: 'Finalizar el contrato de arriendo actual' })
-  async terminateTenancy(@Param('tenancyId') tenancyId: string, @Request() req: any, @Body() dto: TerminateTenancyDto) {
-    return this.propertyRepo.terminateTenancy(tenancyId, req.organizationId, req.user.id, dto);
+  async terminateTenancy(@Param('tenancyId') tenancyId: string, @Body() dto: TerminateTenancyDto) {
+    return this.propertyRepo.terminateTenancy(tenancyId, dto);
   }
 }

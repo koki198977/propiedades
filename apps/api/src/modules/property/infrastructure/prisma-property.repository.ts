@@ -187,33 +187,15 @@ export class PrismaPropertyRepository implements IPropertyRepository {
     );
   }
 
-  async returnSecurityDeposit(tenancyId: string): Promise<void> {
-    await this.prisma.propertyTenant.update({
-      where: { id: tenancyId },
-      data: { isSecurityDepositReturned: true },
-    });
-  }
-
-  async updateSecurityDeposit(tenancyId: string, amount: number): Promise<void> {
-    await this.prisma.propertyTenant.update({
-      where: { id: tenancyId },
-      data: { securityDeposit: amount },
-    });
-  }
-
-  async terminateTenancy(tenancyId: string, organizationId: string, userId: string, data: any): Promise<void> {
+  async returnSecurityDeposit(tenancyId: string, organizationId: string, userId: string, data: any): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
-      // 1. Marcar término de contrato
+      // 1. Marcar como devuelta
       const tenancy = await tx.propertyTenant.update({
         where: { id: tenancyId },
-        data: { 
-          isActive: false, 
-          endDate: new Date(),
-          isSecurityDepositReturned: true
-        },
+        data: { isSecurityDepositReturned: true },
       });
 
-      // 2. Registrar egreso por devolución de garantía si aplica
+      // 2. Crear egreso
       if (data.returnAmount && data.returnAmount > 0) {
         await tx.expense.create({
           data: {
@@ -227,6 +209,23 @@ export class PrismaPropertyRepository implements IPropertyRepository {
           }
         });
       }
+    });
+  }
+
+  async updateSecurityDeposit(tenancyId: string, amount: number): Promise<void> {
+    await this.prisma.propertyTenant.update({
+      where: { id: tenancyId },
+      data: { securityDeposit: amount },
+    });
+  }
+
+  async terminateTenancy(tenancyId: string, data: any): Promise<void> {
+    await this.prisma.propertyTenant.update({
+      where: { id: tenancyId },
+      data: { 
+        isActive: false, 
+        endDate: data.endDate ? new Date(data.endDate) : new Date() 
+      },
     });
   }
 

@@ -25,7 +25,8 @@ import {
   OrganizationRole,
   PaginatedResponse,
   ExpenseCategoryDto,
-  TerminateTenancyDto
+  TerminateTenancyDto,
+  ReturnDepositDto
 } from '@propiedades/types';
 import toast from 'react-hot-toast';
 import { useOrganization } from '../../providers/OrganizationProvider';
@@ -86,6 +87,7 @@ export default function PropertyDetailsPage() {
   const [isAssigningTenant, setIsAssigningTenant] = useState(false);
   const [isEditDepositOpen, setIsEditDepositOpen] = useState(false);
   const [isTerminateModalOpen, setIsTerminateModalOpen] = useState(false);
+  const [returnDepositTenancy, setReturnDepositTenancy] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -482,23 +484,23 @@ export default function PropertyDetailsPage() {
                         <button 
                           className="btn btn-primary" 
                           style={{ width: '100%', padding: '0.6rem', fontSize: '0.75rem', backgroundColor: isOverdue ? '#ef4444' : '#f59e0b', border: 'none', fontWeight: 700 }}
-                          onClick={async () => {
-                            if (window.confirm(`¿Confirmas que has devuelto la garantía de $${Number(tenancy.securityDeposit).toLocaleString('es-CL')} a ${tenancy.tenant.name}?`)) {
-                              try {
-                                await api.patch(`/properties/${property.id}/tenancy/${tenancy.id}/return-deposit`);
-                                queryClient.invalidateQueries({ queryKey: ['property', property.id] });
-                                toast.success('Garantía marcada como devuelta');
-                              } catch (e) {
-                                toast.error('Error al procesar la devolución');
-                              }
-                            }
-                          }}
+                          onClick={() => setReturnDepositTenancy(tenancy)}
                         >
                           Marcar como DEVUELTA
                         </button>
                       </div>
                     );
                   })}
+                  
+                  {returnDepositTenancy && (
+                    <ReturnDepositModal 
+                      isOpen={!!returnDepositTenancy}
+                      onClose={() => setReturnDepositTenancy(null)}
+                      propertyId={property.id}
+                      tenancyId={returnDepositTenancy.id}
+                      initialDeposit={returnDepositTenancy.securityDeposit ? Number(returnDepositTenancy.securityDeposit) : 0}
+                    />
+                  )}
                 </div>
               </div>
             )}
@@ -609,7 +611,6 @@ export default function PropertyDetailsPage() {
                         onClose={() => setIsTerminateModalOpen(false)}
                         propertyId={property.id}
                         tenancyId={activeTenancy.id}
-                        initialDeposit={activeTenancy.securityDeposit ? Number(activeTenancy.securityDeposit) : 0}
                       />
                     </div>
                   </div>
@@ -1370,12 +1371,11 @@ function EditPropertyForm({ property, onDone }: { property: PropertyDto, onDone:
   );
 }
 
-function TerminateTenancyModal({ isOpen, onClose, propertyId, tenancyId, initialDeposit }: { isOpen: boolean; onClose: () => void; propertyId: string; tenancyId: string; initialDeposit: number }) {
+function TerminateTenancyModal({ isOpen, onClose, propertyId, tenancyId }: { isOpen: boolean; onClose: () => void; propertyId: string; tenancyId: string }) {
   const queryClient = useQueryClient();
   const { register, handleSubmit, reset, formState: { errors } } = useForm<TerminateTenancyDto>({
     defaultValues: {
-      returnAmount: initialDeposit,
-      returnDate: toLocalDateFormat()
+      endDate: toLocalDateFormat()
     }
   });
 
@@ -1387,8 +1387,7 @@ function TerminateTenancyModal({ isOpen, onClose, propertyId, tenancyId, initial
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
       queryClient.invalidateQueries({ queryKey: ['active-tenancy', propertyId] });
-      queryClient.invalidateQueries({ queryKey: ['expenses'] });
-      toast.success('Contrato finalizado y egreso registrado');
+      toast.success('Contrato finalizado con éxito');
       onClose();
       reset();
     },
@@ -1405,12 +1404,75 @@ function TerminateTenancyModal({ isOpen, onClose, propertyId, tenancyId, initial
         <button onClick={onClose} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.25rem', color: 'var(--text-muted)' }}>×</button>
         <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--danger)' }}>Finalizar Contrato</h3>
         <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1.5rem', lineHeight: 1.5 }}>
-          La propiedad volverá a estar desocupada. Se creará automáticamente un <strong>Egreso</strong> por el monto de garantía devuelta.
+          La propiedad volverá a estar desocupada. Si el inquilino dejó garantía, esta pasará a la sección "Garantías por Devolver".
         </p>
 
         <form onSubmit={handleSubmit((data) => mutate(data))} className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
-            <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Garantía a devolver ($)</label>
+            <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Fecha de Término</label>
+            <input 
+              {...register('endDate')} 
+              type="date" 
+              required 
+              style={{ padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', fontSize: '1rem', width: '100%' }} 
+            />
+            {errors.endDate && <span style={{ color: 'var(--danger)', fontSize: '0.7rem' }}>{errors.endDate.message}</span>}
+          </div>
+
+          <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+            <button type="button" onClick={onClose} className="btn btn-outline" style={{ flex: 1, padding: '0.75rem' }}>
+              Cancelar
+            </button>
+            <button type="submit" disabled={isPending} className="btn btn-primary" style={{ flex: 1, padding: '0.75rem', backgroundColor: 'var(--danger)', border: 'none' }}>
+              {isPending ? 'Procesando...' : 'Finalizar Contrato'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function ReturnDepositModal({ isOpen, onClose, propertyId, tenancyId, initialDeposit }: { isOpen: boolean; onClose: () => void; propertyId: string; tenancyId: string; initialDeposit: number }) {
+  const queryClient = useQueryClient();
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<ReturnDepositDto>({
+    defaultValues: {
+      returnAmount: initialDeposit,
+      returnDate: toLocalDateFormat()
+    }
+  });
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: async (data: ReturnDepositDto) => {
+      const resp = await api.patch(`/properties/${propertyId}/tenancy/${tenancyId}/return-deposit`, data);
+      return resp.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      toast.success('Garantía marcada como devuelta y egreso registrado');
+      onClose();
+      reset();
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Error al procesar la devolución');
+    }
+  });
+
+  if (!isOpen) return null;
+
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="animate-fade-in" style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '1rem', width: '100%', maxWidth: '400px', position: 'relative' }}>
+        <button onClick={onClose} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.25rem', color: 'var(--text-muted)' }}>×</button>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--danger)' }}>Devolver Garantía</h3>
+        <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1.5rem', lineHeight: 1.5 }}>
+          Se creará automáticamente un <strong>Egreso</strong> en esta propiedad por el monto de garantía devuelta.
+        </p>
+
+        <form onSubmit={handleSubmit((data) => mutate(data))} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Monto a devolver ($)</label>
             <input 
               {...register('returnAmount', { valueAsNumber: true })} 
               type="number" 
@@ -1437,7 +1499,7 @@ function TerminateTenancyModal({ isOpen, onClose, propertyId, tenancyId, initial
               Cancelar
             </button>
             <button type="submit" disabled={isPending} className="btn btn-primary" style={{ flex: 1, padding: '0.75rem', backgroundColor: 'var(--danger)', border: 'none' }}>
-              {isPending ? 'Procesando...' : 'Finalizar y Registrar'}
+              {isPending ? 'Procesando...' : 'Registrar Devolución'}
             </button>
           </div>
         </form>

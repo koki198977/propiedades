@@ -300,6 +300,10 @@ export interface AssignTenantDto {
 }
 
 export interface TerminateTenancyDto {
+  endDate: string; // ISO date
+}
+
+export interface ReturnDepositDto {
   returnAmount: number;
   returnDate: string; // ISO date
 }
