@@ -34,9 +34,17 @@ export class PrismaPropertyRepository implements IPropertyRepository {
           orderBy: { order: 'asc' },
         },
         tenants: {
-          where: { isActive: true },
+          where: {
+            OR: [
+              { isActive: true },
+              { 
+                isActive: false, 
+                securityDeposit: { gt: 0 }, 
+                isSecurityDepositReturned: false 
+              }
+            ]
+          },
           include: { tenant: true },
-          take: 1,
         },
       },
     });
