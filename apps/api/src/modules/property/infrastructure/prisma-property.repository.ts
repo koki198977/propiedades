@@ -78,35 +78,70 @@ export class PrismaPropertyRepository implements IPropertyRepository {
     });
   }
 
-  async assignTenant(propertyId: string, data: any): Promise<any> {
-    // First, deactivate any previous active tenancy for this property (if any)
-    await this.prisma.propertyTenant.updateMany({
-      where: { propertyId, isActive: true },
-      data: { isActive: false, endDate: new Date() },
-    });
+  async assignTenant(propertyId: string, data: any, userId: string): Promise<any> {
+    return this.prisma.$transaction(async (tx) => {
+      // First, deactivate any previous active tenancy for this property (if any)
+      await tx.propertyTenant.updateMany({
+        where: { propertyId, isActive: true },
+        data: { isActive: false, endDate: new Date() },
+      });
 
-    const endDate = data.endDate ? new Date(data.endDate) : null;
+      const endDate = data.endDate ? new Date(data.endDate) : null;
 
-    // Update the property's contractEndDate to match the new assignment
-    await this.prisma.property.update({
-      where: { id: propertyId },
-      data: { contractEndDate: endDate },
-    });
+      // Update the property's contractEndDate to match the new assignment
+      await tx.property.update({
+        where: { id: propertyId },
+        data: { contractEndDate: endDate },
+      });
 
-    // Create the new tenancy
-    return this.prisma.propertyTenant.create({
-      data: {
-        propertyId,
-        tenantId: data.tenantId,
-        startDate: new Date(data.startDate),
-        endDate,
-        monthlyRent: data.monthlyRent,
-        securityDeposit: data.securityDeposit,
-        isActive: true,
-      },
-      include: {
-        tenant: true,
-      },
+      // Create the new tenancy
+      const tenancy = await tx.propertyTenant.create({
+        data: {
+          propertyId,
+          tenantId: data.tenantId,
+          startDate: new Date(data.startDate),
+          endDate,
+          monthlyRent: data.monthlyRent,
+          securityDeposit: data.securityDeposit,
+          isActive: true,
+        },
+        include: {
+          tenant: true,
+        },
+      });
+
+      // Registrar los pagos iniciales
+      const paymentDate = new Date(data.startDate);
+      
+      // 1. Pago de Arriendo
+      if (data.monthlyRent > 0) {
+        await tx.payment.create({
+          data: {
+            propertyTenantId: tenancy.id,
+            recordedById: userId,
+            amount: data.monthlyRent,
+            paymentDate,
+            paymentMethod: 'TRANSFER', // Método por defecto
+            notes: 'Pago inicial: Arriendo del primer mes',
+          }
+        });
+      }
+
+      // 2. Pago de Garantía
+      if (data.securityDeposit > 0) {
+        await tx.payment.create({
+          data: {
+            propertyTenantId: tenancy.id,
+            recordedById: userId,
+            amount: data.securityDeposit,
+            paymentDate,
+            paymentMethod: 'TRANSFER',
+            notes: 'Pago inicial: Mes de garantía',
+          }
+        });
+      }
+
+      return tenancy;
     });
   }
 
@@ -166,10 +201,32 @@ export class PrismaPropertyRepository implements IPropertyRepository {
     });
   }
 
-  async terminateTenancy(tenancyId: string): Promise<void> {
-    await this.prisma.propertyTenant.update({
-      where: { id: tenancyId },
-      data: { isActive: false, endDate: new Date() },
+  async terminateTenancy(tenancyId: string, organizationId: string, userId: string, data: any): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      // 1. Marcar término de contrato
+      const tenancy = await tx.propertyTenant.update({
+        where: { id: tenancyId },
+        data: { 
+          isActive: false, 
+          endDate: new Date(),
+          isSecurityDepositReturned: true
+        },
+      });
+
+      // 2. Registrar egreso por devolución de garantía si aplica
+      if (data.returnAmount && data.returnAmount > 0) {
+        await tx.expense.create({
+          data: {
+            organizationId,
+            propertyId: tenancy.propertyId,
+            amount: data.returnAmount,
+            date: new Date(data.returnDate),
+            category: 'Devolución Garantía',
+            description: `Devolución de garantía de arrendamiento. Inquilino ID: ${tenancy.tenantId}`,
+            recordedById: userId,
+          }
+        });
+      }
     });
   }
 

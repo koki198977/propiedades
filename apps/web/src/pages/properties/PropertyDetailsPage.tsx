@@ -25,6 +25,7 @@ import {
   OrganizationRole,
   PaginatedResponse,
   ExpenseCategoryDto,
+  TerminateTenancyDto
 } from '@propiedades/types';
 import toast from 'react-hot-toast';
 import { useOrganization } from '../../providers/OrganizationProvider';
@@ -84,6 +85,7 @@ export default function PropertyDetailsPage() {
   const [isEditingProperty, setIsEditingProperty] = useState(false);
   const [isAssigningTenant, setIsAssigningTenant] = useState(false);
   const [isEditDepositOpen, setIsEditDepositOpen] = useState(false);
+  const [isTerminateModalOpen, setIsTerminateModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -597,20 +599,18 @@ export default function PropertyDetailsPage() {
                       <button 
                         className="btn btn-outline" 
                         style={{ fontSize: '0.65rem', padding: '0.3rem 0.6rem', color: 'var(--danger)', borderColor: 'var(--danger)', opacity: 0.8 }}
-                        onClick={async () => {
-                          if (window.confirm('¿Estás seguro de que deseas FINALIZAR el contrato de este arrendatario? La propiedad volverá a estar disponible.')) {
-                            try {
-                              await api.patch(`/properties/${property.id}/tenancy/${activeTenancy.id}/terminate`);
-                              queryClient.invalidateQueries({ queryKey: ['property', property.id] });
-                              toast.success('Contrato finalizado con éxito');
-                            } catch (e) {
-                              toast.error('Error al finalizar el contrato');
-                            }
-                          }
-                        }}
+                        onClick={() => setIsTerminateModalOpen(true)}
                       >
                         ⚠️ Terminar Contrato
                       </button>
+                      
+                      <TerminateTenancyModal 
+                        isOpen={isTerminateModalOpen}
+                        onClose={() => setIsTerminateModalOpen(false)}
+                        propertyId={property.id}
+                        tenancyId={activeTenancy.id}
+                        initialDeposit={activeTenancy.securityDeposit ? Number(activeTenancy.securityDeposit) : 0}
+                      />
                     </div>
                   </div>
                   
@@ -1386,6 +1386,82 @@ function EditPropertyForm({ property, onDone }: { property: PropertyDto, onDone:
         <button disabled={isPending} className="btn btn-primary" style={{ flex: 2 }}>{isPending ? 'Guardando...' : 'Guardar Cambios'}</button>
       </div>
     </form>
+  );
+}
+
+function TerminateTenancyModal({ isOpen, onClose, propertyId, tenancyId, initialDeposit }: { isOpen: boolean; onClose: () => void; propertyId: string; tenancyId: string; initialDeposit: number }) {
+  const queryClient = useQueryClient();
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<TerminateTenancyDto>({
+    defaultValues: {
+      returnAmount: initialDeposit,
+      returnDate: toLocalDateFormat()
+    }
+  });
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: async (data: TerminateTenancyDto) => {
+      const resp = await api.patch(`/properties/${propertyId}/tenancy/${tenancyId}/terminate`, data);
+      return resp.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['active-tenancy', propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      toast.success('Contrato finalizado y egreso registrado');
+      onClose();
+      reset();
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Error al finalizar contrato');
+    }
+  });
+
+  if (!isOpen) return null;
+
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="animate-fade-in" style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '1rem', width: '100%', maxWidth: '400px', position: 'relative' }}>
+        <button onClick={onClose} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.25rem', color: 'var(--text-muted)' }}>×</button>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--danger)' }}>Finalizar Contrato</h3>
+        <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1.5rem', lineHeight: 1.5 }}>
+          La propiedad volverá a estar desocupada. Se creará automáticamente un <strong>Egreso</strong> por el monto de garantía devuelta.
+        </p>
+
+        <form onSubmit={handleSubmit((data) => mutate(data))} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Garantía a devolver ($)</label>
+            <input 
+              {...register('returnAmount', { valueAsNumber: true })} 
+              type="number" 
+              min="0"
+              required 
+              style={{ padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', fontSize: '1rem', width: '100%' }} 
+            />
+            {errors.returnAmount && <span style={{ color: 'var(--danger)', fontSize: '0.7rem' }}>{errors.returnAmount.message}</span>}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Fecha de devolución</label>
+            <input 
+              {...register('returnDate')} 
+              type="date" 
+              required 
+              style={{ padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', fontSize: '1rem', width: '100%' }} 
+            />
+            {errors.returnDate && <span style={{ color: 'var(--danger)', fontSize: '0.7rem' }}>{errors.returnDate.message}</span>}
+          </div>
+
+          <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+            <button type="button" onClick={onClose} className="btn btn-outline" style={{ flex: 1, padding: '0.75rem' }}>
+              Cancelar
+            </button>
+            <button type="submit" disabled={isPending} className="btn btn-primary" style={{ flex: 1, padding: '0.75rem', backgroundColor: 'var(--danger)', border: 'none' }}>
+              {isPending ? 'Procesando...' : 'Finalizar y Registrar'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
 

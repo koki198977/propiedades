@@ -10,7 +10,7 @@ import { UpdatePropertyUseCase } from '../application/update-property.use-case';
 import { AssignTenantUseCase } from '../application/assign-tenant.use-case';
 import { DeletePropertyUseCase } from '../application/delete-property.use-case';
 import { PropertyMeterService } from './property-meter.service';
-import { CreatePropertyDto, UpdatePropertyDto, AssignTenantDto, CreatePropertyMeterDto, ReorderPhotosDto, OrganizationRole } from '@propiedades/types';
+import { CreatePropertyDto, UpdatePropertyDto, AssignTenantDto, CreatePropertyMeterDto, ReorderPhotosDto, OrganizationRole, TerminateTenancyDto } from '@propiedades/types';
 import { CloudinaryService } from '../../../shared/infrastructure/cloudinary/cloudinary.service';
 import { IPropertyRepository, PROPERTY_REPOSITORY } from '../domain/property.repository.port';
 
@@ -71,7 +71,7 @@ export class PropertyController {
   @RequireRole(OrganizationRole.ADMIN, OrganizationRole.EDITOR)
   @ApiOperation({ summary: 'Asignar un inquilino a la propiedad' })
   async assignTenant(@Param('id') id: string, @Request() req: any, @Body() dto: AssignTenantDto) {
-    return this.assignTenantUseCase.execute(id, req.organizationId, dto);
+    return this.assignTenantUseCase.execute(id, req.organizationId, req.user.id, dto);
   }
 
   // ── Meters ────────────────────────────────────────────────────────────
@@ -156,7 +156,7 @@ export class PropertyController {
   @Patch(':id/tenancy/:tenancyId/terminate')
   @RequireRole(OrganizationRole.ADMIN, OrganizationRole.EDITOR)
   @ApiOperation({ summary: 'Finalizar el contrato de arriendo actual' })
-  async terminateTenancy(@Param('tenancyId') tenancyId: string) {
-    return this.propertyRepo.terminateTenancy(tenancyId);
+  async terminateTenancy(@Param('tenancyId') tenancyId: string, @Request() req: any, @Body() dto: TerminateTenancyDto) {
+    return this.propertyRepo.terminateTenancy(tenancyId, req.organizationId, req.user.id, dto);
   }
 }

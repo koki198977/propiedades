@@ -299,6 +299,11 @@ export interface AssignTenantDto {
   securityDeposit?: number
 }
 
+export interface TerminateTenancyDto {
+  returnAmount: number;
+  returnDate: string; // ISO date
+}
+
 export interface PropertyTenantDto {
   id: string
   tenantId: string

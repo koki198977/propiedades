@@ -8,7 +8,7 @@ export class AssignTenantUseCase {
     @Inject(PROPERTY_REPOSITORY) private readonly propertyRepo: IPropertyRepository,
   ) {}
 
-  async execute(propertyId: string, organizationId: string, dto: AssignTenantDto) {
+  async execute(propertyId: string, organizationId: string, userId: string, dto: AssignTenantDto) {
     const property = await this.propertyRepo.findById(propertyId);
     if (!property) throw new Error('Propiedad no encontrada');
     
@@ -20,6 +20,6 @@ export class AssignTenantUseCase {
       dto.startDate = new Date().toISOString();
     }
 
-    return this.propertyRepo.assignTenant(propertyId, dto);
+    return this.propertyRepo.assignTenant(propertyId, dto, userId);
   }
 }
