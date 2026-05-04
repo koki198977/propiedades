@@ -79,6 +79,54 @@ export class SendMonthlyBillsUseCase {
     return results;
   }
 
+  async executeSingle(tenancyId: string) {
+    // 1. Obtener el contrato específico
+    const tenancy = await this.prisma.propertyTenant.findUnique({
+      where: { id: tenancyId },
+      include: {
+        tenant: true,
+        property: {
+          include: {
+            organization: true
+          }
+        },
+      },
+    });
+
+    if (!tenancy) throw new BadRequestException('Contrato no encontrado');
+    if (!tenancy.property.organizationId) throw new BadRequestException('Propiedad no asociada a una organización');
+    
+    const organization = tenancy.property.organization;
+    if (!organization?.bankName || !organization?.bankAccountNumber) {
+      throw new BadRequestException('Debes configurar los datos bancarios de la organización primero.');
+    }
+
+    if (!tenancy.tenant.email) {
+      throw new BadRequestException(`Inquilino ${tenancy.tenant.name} no tiene email configurado.`);
+    }
+
+    const currentMonth = new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(new Date());
+
+    try {
+      const html = this.generateEmailTemplate({
+        organization,
+        tenancy,
+        month: currentMonth,
+      });
+
+      await this.emailService.send({
+        to: tenancy.tenant.email,
+        subject: `Cobro de Arriendo - ${currentMonth} - ${tenancy.property.address}`,
+        html,
+      });
+
+      return { success: true, message: `Email enviado con éxito a ${tenancy.tenant.email}` };
+    } catch (error) {
+      this.logger.error(`Error enviando a ${tenancy.tenant.email}: ${error.message}`);
+      throw new BadRequestException(`Error enviando email: ${error.message}`);
+    }
+  }
+
   private generateEmailTemplate(data: { organization: any, tenancy: any, month: string }) {
     const { organization, tenancy, month } = data;
     const amount = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(Number(tenancy.monthlyRent));

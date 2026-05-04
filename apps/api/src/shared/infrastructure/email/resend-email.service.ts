@@ -16,12 +16,17 @@ export class ResendEmailService {
   private readonly fromDefault: string;
 
   constructor(private readonly configService: ConfigService) {
-    const apiKey = this.configService.get<string>('RESEND_API_KEY');
+    const apiKey = this.sanitizeConfig(this.configService.get<string>('RESEND_API_KEY'));
     this.resend = new Resend(apiKey);
-    this.fromDefault = this.configService.get<string>(
+    this.fromDefault = this.sanitizeConfig(this.configService.get<string>(
       'SMTP_FROM',
-      'Sistema Propiedades <onboarding@resend.dev>',
-    );
+      'Yagnam Propiedades <no-reply@yagnampropiedades.cl>',
+    ));
+  }
+
+  private sanitizeConfig(value: string | undefined): string {
+    if (!value) return '';
+    return value.replace(/^["']|["']$/g, '').trim();
   }
 
   async send(options: SendEmailOptions) {
@@ -36,10 +41,11 @@ export class ResendEmailService {
         finalSubject = `[TEST para ${options.to}] ${options.subject}`;
       }
 
-      this.logger.log(`Enviando email a ${finalTo}: ${finalSubject}`);
+      const from = options.from || this.fromDefault;
+      this.logger.log(`Enviando email a ${finalTo}: ${finalSubject} [From: ${from}]`);
       
       const { data, error } = await this.resend.emails.send({
-        from: options.from || this.fromDefault,
+        from,
         to: finalTo,
         subject: finalSubject,
         html: options.html,

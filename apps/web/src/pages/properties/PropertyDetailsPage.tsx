@@ -145,6 +145,19 @@ export default function PropertyDetailsPage() {
     onError: () => toast.error('Error al eliminar el gasto'),
   });
 
+  const sendBillingEmailMutation = useMutation({
+    mutationFn: async (tenancyId: string) => {
+      await api.post(`/organizations/${activeOrganization?.id}/billing/tenancy/${tenancyId}/send`);
+    },
+    onSuccess: () => {
+      toast.success('Correo de cobranza enviado con éxito');
+    },
+    onError: (err: any) => {
+      const msg = err.response?.data?.message || 'Error al enviar el correo';
+      toast.error(msg);
+    },
+  });
+
   const uploadPhotoMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
@@ -594,7 +607,23 @@ export default function PropertyDetailsPage() {
                       {activeTenancy.tenant.name[0]}
                     </div>
                     <div>
-                      <div style={{ fontWeight: 600 }}>{activeTenancy.tenant.name}</div>
+                      <div className="flex items-center gap-2">
+                        <div style={{ fontWeight: 600 }}>{activeTenancy.tenant.name}</div>
+                        {activeTenancy.tenant.email && (
+                          <button 
+                            onClick={() => {
+                              if (window.confirm(`¿Enviar correo de cobranza a ${activeTenancy.tenant.name}?`)) {
+                                sendBillingEmailMutation.mutate(activeTenancy.id);
+                              }
+                            }}
+                            disabled={sendBillingEmailMutation.isPending}
+                            className="btn-text"
+                            style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: 800, padding: '0.2rem 0.4rem', borderRadius: '0.4rem', backgroundColor: 'rgba(79, 70, 229, 0.05)' }}
+                          >
+                            {sendBillingEmailMutation.isPending ? 'Enviando...' : '✉️ Enviar Cobro'}
+                          </button>
+                        )}
+                      </div>
                       <div className="text-muted" style={{ fontSize: '0.75rem' }}>{activeTenancy.tenant.email || 'Sin email'}</div>
                     </div>
                     <div style={{ marginLeft: 'auto' }}>

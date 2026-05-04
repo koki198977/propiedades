@@ -21,4 +21,13 @@ export class BillingController {
   async sendAll(@Param('id') id: string) {
     return this.sendBillsUseCase.execute(id);
   }
+
+  @Post('tenancy/:tenancyId/send')
+  @UseGuards(OrganizationGuard)
+  @RequireRole(OrganizationRole.ADMIN, OrganizationRole.EDITOR)
+  @ApiHeader({ name: 'x-organization-id', required: true })
+  @ApiOperation({ summary: 'Enviar cobro de arriendo a un inquilino específico' })
+  async sendSingle(@Param('tenancyId') tenancyId: string) {
+    return this.sendBillsUseCase.executeSingle(tenancyId);
+  }
 }
