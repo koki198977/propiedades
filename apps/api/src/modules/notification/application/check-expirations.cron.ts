@@ -139,16 +139,16 @@ export class CheckExpirationsCron {
   }
 
   private async checkSecurityDepositDeadlines() {
-    // 45 days after contract end
-    const fortyFiveDaysAgo = new Date();
-    fortyFiveDaysAgo.setDate(fortyFiveDaysAgo.getDate() - 45);
+    // Alert at 40 days after contract end (5 days before the 45-day legal limit)
+    const fortyDaysAgo = new Date();
+    fortyDaysAgo.setDate(fortyDaysAgo.getDate() - 40);
 
     const pendingDeposits = await this.prisma.propertyTenant.findMany({
       where: {
         isActive: false,
         isSecurityDepositReturned: false,
         endDate: {
-          lte: fortyFiveDaysAgo,
+          lte: fortyDaysAgo,
         }
       },
       include: {
@@ -162,20 +162,32 @@ export class CheckExpirationsCron {
     });
 
     for (const tenancy of pendingDeposits) {
-      const message = `Atención: Han pasado 45 días desde el término del contrato de ${tenancy.tenant.name} en ${tenancy.property.address}. Debe realizar la devolución de la garantía.`;
+      const daysSinceEnd = Math.floor((new Date().getTime() - new Date(tenancy.endDate!).getTime()) / (1000 * 60 * 60 * 24));
+      const daysRemaining = 45 - daysSinceEnd;
+      
+      let message = '';
+      let title = '';
+
+      if (daysRemaining > 0) {
+        title = 'Plazo Garantía Próximo a Vencer';
+        message = `Atención: Han pasado ${daysSinceEnd} días desde el término del contrato de ${tenancy.tenant.name} en ${tenancy.property.address}. Le quedan ${daysRemaining} días para cumplir el plazo legal de devolución de garantía.`;
+      } else {
+        title = 'Plazo Devolución Garantía VENCIDO';
+        message = `Atención: El plazo legal de 45 días para la devolución de la garantía de ${tenancy.tenant.name} en ${tenancy.property.address} ha EXSPIRADO.`;
+      }
       
       await this.notificationRepo.create({
         userId: tenancy.property.userId,
         type: NotificationType.SYSTEM,
-        title: 'Plazo Devolución Garantía Cumplido',
+        title,
         message,
       });
 
       if (tenancy.property.user.email) {
         await this.emailService.send({
           to: tenancy.property.user.email,
-          subject: `⚠️ Plazo de Garantía: ${tenancy.tenant.name}`,
-          html: this.wrapHtml('Devolución de Garantía', message, tenancy.property.address),
+          subject: `⚠️ ${title}: ${tenancy.tenant.name}`,
+          html: this.wrapHtml(title, message, tenancy.property.address),
         });
       }
     }

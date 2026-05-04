@@ -11,6 +11,6 @@ import { ResendEmailService } from '../../../shared/infrastructure/email/resend-
     CheckExpirationsCron,
     ResendEmailService,
   ],
-  exports: [NotificationRepository],
+  exports: [NotificationRepository, CheckExpirationsCron],
 })
 export class NotificationModule {}

@@ -5,13 +5,17 @@ import { OrganizationGuard } from '../../../shared/infrastructure/guards/organiz
 import { RequireRole } from '../../../shared/infrastructure/decorators/require-role.decorator';
 import { OrganizationRole } from '@propiedades/types';
 import { SendMonthlyBillsUseCase } from '../application/send-monthly-bills.use-case';
+import { CheckExpirationsCron } from '../../notification/application/check-expirations.cron';
 
 @ApiTags('Billing')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('organizations/:id/billing')
 export class BillingController {
-  constructor(private readonly sendBillsUseCase: SendMonthlyBillsUseCase) {}
+  constructor(
+    private readonly sendBillsUseCase: SendMonthlyBillsUseCase,
+    private readonly cronService: CheckExpirationsCron,
+  ) {}
 
   @Post('send-all')
   @UseGuards(OrganizationGuard)
@@ -29,5 +33,14 @@ export class BillingController {
   @ApiOperation({ summary: 'Enviar cobro de arriendo a un inquilino específico' })
   async sendSingle(@Param('tenancyId') tenancyId: string) {
     return this.sendBillsUseCase.executeSingle(tenancyId);
+  }
+
+  // --- DEBUG ENDPOINT (Temporary) ---
+  @Post('debug-trigger-cron')
+  @RequireRole(OrganizationRole.ADMIN)
+  @ApiOperation({ summary: 'FORZAR ejecución de cron de notificaciones (DEBUG)' })
+  async triggerCronManually() {
+    await this.cronService.handleCron();
+    return { success: true, message: 'Cron job executed manually.' };
   }
 }
