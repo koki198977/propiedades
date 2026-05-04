@@ -52,7 +52,7 @@ export class CheckExpirationsCron {
         await this.emailService.send({
           to: property.user.email,
           subject: `📄 Vencimiento de Contrato: ${property.address}`,
-          html: `<p>${message}</p>`,
+          html: this.wrapHtml('Aviso de Vencimiento', message, property.address),
         });
       }
     }
@@ -87,7 +87,7 @@ export class CheckExpirationsCron {
         await this.emailService.send({
           to: property.user.email,
           subject: `💰 Cobro de Arriendo: ${property.address}`,
-          html: `<p>${message}</p>`,
+          html: this.wrapHtml('Cobro de Arriendo', message, property.address),
         });
       }
     }
@@ -132,7 +132,7 @@ export class CheckExpirationsCron {
         await this.emailService.send({
           to: reminder.property.user.email,
           subject: `🔔 Aviso de Pago: ${reminder.title}`,
-          html: `<p>${message}</p>`,
+          html: this.wrapHtml('Recordatorio de Pago', message, reminder.property.address),
         });
       }
     }
@@ -175,9 +175,43 @@ export class CheckExpirationsCron {
         await this.emailService.send({
           to: tenancy.property.user.email,
           subject: `⚠️ Plazo de Garantía: ${tenancy.tenant.name}`,
-          html: `<p>${message}</p>`,
+          html: this.wrapHtml('Devolución de Garantía', message, tenancy.property.address),
         });
       }
     }
+  }
+
+  private wrapHtml(title: string, message: string, address: string) {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { text-align: center; margin-bottom: 30px; }
+          .card { background: #ffffff; border-radius: 12px; padding: 30px; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+          .title { color: #4f46e5; font-size: 20px; font-weight: 700; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
+          .message { font-size: 16px; color: #374151; margin-bottom: 25px; }
+          .footer { font-size: 12px; color: #9ca3af; text-align: center; margin-top: 30px; border-top: 1px solid #f3f4f6; padding-top: 20px; }
+          .property { font-weight: 600; color: #111827; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h2 style="color: #4f46e5; margin: 0;">Yagnam Propiedades</h2>
+        </div>
+        <div class="card">
+          <div class="title">${title}</div>
+          <div class="message">${message}</div>
+          <div style="font-size: 14px; color: #6b7280;">
+            Propiedad: <span class="property">${address}</span>
+          </div>
+        </div>
+        <div class="footer">
+          Este es un correo automático generado por tu sistema de gestión de propiedades.
+        </div>
+      </body>
+      </html>
+    `;
   }
 }

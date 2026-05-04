@@ -104,7 +104,7 @@ export class SendMonthlyBillsUseCase {
       </head>
       <body>
         <div class="header">
-          <h2 style="color: #6366f1;">Aviso de Cobranza</h2>
+          <h2 style="color: #4f46e5;">Aviso de Cobranza</h2>
           <p>Mes de ${month}</p>
         </div>
 
@@ -127,7 +127,7 @@ export class SendMonthlyBillsUseCase {
 
         <div class="footer">
           Propiedad: <span class="property-address">${tenancy.property.address}</span><br>
-          Este es un correo automático generado por el sistema de gestión de propiedades de <strong>${organization.name}</strong>.
+          Este es un correo automático generado por el sistema de gestión de propiedades de <strong>Yagnam Propiedades</strong>.
         </div>
       </body>
       </html>
