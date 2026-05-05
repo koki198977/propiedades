@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../../../shared/infrastructure/prisma.service';
 import { NotificationRepository } from '../infrastructure/notification.repository';
 import { NotificationType } from '@propiedades/types';
@@ -15,7 +15,7 @@ export class CheckExpirationsCron {
     private readonly emailService: ResendEmailService,
   ) {}
 
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  @Cron('15 14 * * *') // PRUEBA: 10:15 hora Chile (UTC-4) = 14:15 UTC — cambiar a '0 13 * * *' después
   async handleCron() {
     this.logger.log('Running daily notification checks...');
     await this.checkContractExpirations();
@@ -98,15 +98,19 @@ export class CheckExpirationsCron {
   }
 
   private async checkExpenseReminders() {
-    const threeDaysFromNow = new Date();
-    threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
+    const fiveDaysFromNow = new Date();
+    fiveDaysFromNow.setDate(fiveDaysFromNow.getDate() + 5);
+
+    // Incluir desde ayer para no perder recordatorios si el cron corre tarde
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
 
     const reminders = await this.prisma.expenseReminder.findMany({
       where: {
         isActive: true,
         nextDueDate: {
-          lte: threeDaysFromNow,
-          gte: new Date(),
+          lte: fiveDaysFromNow,
+          gte: yesterday,
         },
       },
       include: {
