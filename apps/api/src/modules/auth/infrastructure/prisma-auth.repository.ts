@@ -37,6 +37,20 @@ export class PrismaAuthRepository implements IAuthRepository {
     return this.mapToEntity(user);
   }
 
+  async update(userId: string, data: Partial<Omit<User, 'id' | 'createdAt' | 'passwordHash'>> & { passwordHash?: string }): Promise<User> {
+    const updateData: any = {};
+    if (data.email !== undefined) updateData.email = data.email;
+    if (data.fullName !== undefined) updateData.fullName = data.fullName;
+    if (data.passwordHash !== undefined) updateData.passwordHash = data.passwordHash;
+    if (data.role !== undefined) updateData.role = data.role;
+
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+    });
+    return this.mapToEntity(user);
+  }
+
   async updatePassword(userId: string, newPasswordHash: string): Promise<void> {
     await this.prisma.user.update({
       where: { id: userId },

@@ -5,6 +5,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { RegisterUseCase } from '../application/register.use-case';
 import { LoginUseCase } from '../application/login.use-case';
+import { GetProfileUseCase } from '../application/get-profile.use-case';
+import { UpdateProfileUseCase } from '../application/update-profile.use-case';
 import { AUTH_REPOSITORY } from '../domain/auth.repository.port';
 import { PrismaAuthRepository } from './prisma-auth.repository';
 import { JwtStrategy } from './jwt.strategy';
@@ -27,6 +29,8 @@ import { JwtStrategy } from './jwt.strategy';
   providers: [
     RegisterUseCase,
     LoginUseCase,
+    GetProfileUseCase,
+    UpdateProfileUseCase,
     JwtStrategy,
     {
       provide: AUTH_REPOSITORY,

@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import { UserProfileDto } from '@propiedades/types';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
+import ProfilePage from './pages/auth/ProfilePage';
 import PropertiesPage from './pages/properties/PropertiesPage';
 import CreatePropertyPage from './pages/properties/CreatePropertyPage';
 import PropertyDetailsPage from './pages/properties/PropertyDetailsPage';
@@ -113,23 +114,25 @@ function App() {
               <div className="hide-on-mobile flex items-center gap-6">
                 <NotificationCenter />
                 <div className="flex items-center gap-3">
-                  <div style={{ 
-                    width: '40px', 
-                    height: '40px', 
-                    borderRadius: '12px', 
-                    background: 'linear-gradient(135deg, var(--primary), var(--accent))', 
-                    color: 'white', 
-                    display: 'grid', 
-                    placeItems: 'center', 
-                    fontWeight: 'bold',
-                    boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)'
-                  }}>
-                    {user.fullName[0].toUpperCase()}
-                  </div>
-                  <div className="flex flex-col">
-                    <span style={{ fontWeight: 700, fontSize: '0.85rem', lineHeight: 1 }}>{user.fullName.split(' ')[0]}</span>
-                    <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Administrador</span>
-                  </div>
+                  <Link to="/profile" className="flex items-center gap-3 no-underline" style={{ color: 'inherit' }}>
+                    <div style={{ 
+                      width: '40px', 
+                      height: '40px', 
+                      borderRadius: '12px', 
+                      background: 'linear-gradient(135deg, var(--primary), var(--accent))', 
+                      color: 'white', 
+                      display: 'grid', 
+                      placeItems: 'center', 
+                      fontWeight: 'bold',
+                      boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)'
+                    }}>
+                      {user.fullName[0].toUpperCase()}
+                    </div>
+                    <div className="flex flex-col">
+                      <span style={{ fontWeight: 700, fontSize: '0.85rem', lineHeight: 1 }}>{user.fullName.split(' ')[0]}</span>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Administrador</span>
+                    </div>
+                  </Link>
                 </div>
                 <button onClick={logout} className="btn-icon" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }} title="Cerrar Sesión">
                   <LogoutIcon />
@@ -145,7 +148,7 @@ function App() {
         <div className="mobile-drawer-overlay" onClick={() => setIsMobileMenuOpen(false)}>
           <div className="mobile-drawer" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center" style={{ marginBottom: '1rem' }}>
-              <div className="flex items-center gap-3">
+              <Link to="/profile" className="flex items-center gap-3 no-underline" style={{ color: 'inherit' }} onClick={() => setIsMobileMenuOpen(false)}>
                 <div style={{ 
                   width: '36px', height: '36px', borderRadius: '10px', 
                   background: 'linear-gradient(135deg, var(--primary), var(--accent))', 
@@ -157,7 +160,7 @@ function App() {
                   <div style={{ fontWeight: 800, fontSize: '0.9rem' }}>{user.fullName}</div>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Administrador</div>
                 </div>
-              </div>
+              </Link>
               <button onClick={() => setIsMobileMenuOpen(false)} style={{ background: 'var(--surface-50)', border: 'none', width: '32px', height: '32px', borderRadius: '8px', cursor: 'pointer', color: 'var(--text-muted)' }}>
                 ✕
               </button>
@@ -211,6 +214,7 @@ function App() {
           <Route path="/finances" element={<FinancialReportsPage />} />
           <Route path="/team" element={<TeamSettingsPage />} />
           <Route path="/admin" element={user && user.role === UserRole.SUPER_ADMIN ? <GodModePage /> : <Navigate to="/" />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Routes>
       </main>
 

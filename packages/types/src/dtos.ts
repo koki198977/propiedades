@@ -51,6 +51,12 @@ export interface UserProfileDto {
   createdAt: string
 }
 
+export interface UpdateProfileDto {
+  fullName?: string
+  email?: string
+  password?: string
+}
+
 // ============================================================
 // ORGANIZATION & TEAM
 // ============================================================
