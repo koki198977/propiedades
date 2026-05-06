@@ -153,6 +153,20 @@ export class PropertyController {
     return this.propertyRepo.updateSecurityDeposit(tenancyId, amount);
   }
 
+  @Patch(':id/tenancy/:tenancyId/monthly-rent')
+  @RequireRole(OrganizationRole.ADMIN, OrganizationRole.EDITOR)
+  @ApiOperation({ summary: 'Actualizar el canon de arriendo mensual' })
+  async updateMonthlyRent(@Param('tenancyId') tenancyId: string, @Body('amount') amount: number) {
+    return this.propertyRepo.updateMonthlyRent(tenancyId, amount);
+  }
+
+  @Patch(':id/tenancy/:tenancyId/tenant')
+  @RequireRole(OrganizationRole.ADMIN, OrganizationRole.EDITOR)
+  @ApiOperation({ summary: 'Actualizar el inquilino de un contrato' })
+  async updateTenancyTenant(@Param('tenancyId') tenancyId: string, @Body('tenantId') tenantId: string) {
+    return this.propertyRepo.updateTenancyTenant(tenancyId, tenantId);
+  }
+
   @Patch(':id/tenancy/:tenancyId/terminate')
   @RequireRole(OrganizationRole.ADMIN, OrganizationRole.EDITOR)
   @ApiOperation({ summary: 'Finalizar el contrato de arriendo actual' })

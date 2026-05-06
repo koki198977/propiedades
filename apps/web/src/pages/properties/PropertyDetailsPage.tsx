@@ -86,6 +86,8 @@ export default function PropertyDetailsPage() {
   const [isEditingProperty, setIsEditingProperty] = useState(false);
   const [isAssigningTenant, setIsAssigningTenant] = useState(false);
   const [isEditDepositOpen, setIsEditDepositOpen] = useState(false);
+  const [isEditRentOpen, setIsEditRentOpen] = useState(false);
+  const [isChangeTenantOpen, setIsChangeTenantOpen] = useState(false);
   const [isTerminateModalOpen, setIsTerminateModalOpen] = useState(false);
   const [returnDepositTenancy, setReturnDepositTenancy] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -609,6 +611,18 @@ export default function PropertyDetailsPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <div style={{ fontWeight: 600 }}>{activeTenancy.tenant.name}</div>
+                        <button 
+                          onClick={() => setIsChangeTenantOpen(true)}
+                          style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.65rem', fontWeight: 800, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+                        >
+                          CAMBIAR
+                        </button>
+                        <ChangeTenantModal 
+                          isOpen={isChangeTenantOpen}
+                          onClose={() => setIsChangeTenantOpen(false)}
+                          propertyId={property.id}
+                          tenancyId={activeTenancy.id}
+                        />
                         {activeTenancy.tenant.email && (
                           <button 
                             onClick={() => {
@@ -646,11 +660,27 @@ export default function PropertyDetailsPage() {
                   
                   <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
                     <div style={{ backgroundColor: 'white', padding: '1.25rem', borderRadius: '0.75rem', border: '1px solid var(--border-light)' }}>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Canon de Arriendo</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Canon de Arriendo</span>
+                        <button 
+                          onClick={() => setIsEditRentOpen(true)}
+                          style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.65rem', fontWeight: 800, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+                        >
+                          EDITAR
+                        </button>
+                      </div>
                       <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)' }}>
                         ${Number(activeTenancy.monthlyRent).toLocaleString('es-CL')}
                       </div>
+                      <MonthlyRentModal 
+                        isOpen={isEditRentOpen}
+                        onClose={() => setIsEditRentOpen(false)}
+                        initialAmount={Number(activeTenancy.monthlyRent)}
+                        propertyId={property.id}
+                        tenancyId={activeTenancy.id}
+                      />
                     </div>
+                    
                     <div style={{ backgroundColor: 'white', padding: '1.25rem', borderRadius: '0.75rem', border: '1px solid var(--border-light)', position: 'relative' }}>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', justifyContent: 'space-between' }}>
                         <span>Mes de Garantía</span>
@@ -695,7 +725,6 @@ export default function PropertyDetailsPage() {
                       </div>
                     </div>
                   </div>
-
 
                   <div className="flex flex-col gap-2">
                     <RegisterPaymentForm tenancyId={activeTenancy.id} />
@@ -2064,6 +2093,133 @@ function SecurityDepositModal({ isOpen, onClose, initialAmount, propertyId, tena
             <button type="button" onClick={onClose} className="btn btn-outline" style={{ flex: 1 }}>Cancelar</button>
             <button type="submit" disabled={isSubmitting} className="btn btn-primary" style={{ flex: 1 }}>
               {isSubmitting ? 'Guardando...' : 'Guardar'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function MonthlyRentModal({ isOpen, onClose, initialAmount, propertyId, tenancyId }: { isOpen: boolean, onClose: () => void, initialAmount: number, propertyId: string, tenancyId: string }) {
+  const [amount, setAmount] = useState(initialAmount.toString());
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const numericAmount = Number(amount);
+    if (isNaN(numericAmount)) return;
+    
+    setIsSubmitting(true);
+    try {
+      await api.patch(`/properties/${propertyId}/tenancy/${tenancyId}/monthly-rent`, { amount: numericAmount });
+      queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['active-tenancy', propertyId] });
+      toast.success('Canon de arriendo actualizado');
+      onClose();
+    } catch (e) {
+      toast.error('Error al actualizar canon de arriendo');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content animate-slide-up" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', padding: '2rem' }}>
+        <h2 className="font-heading" style={{ marginBottom: '1.5rem', fontSize: '1.5rem' }}>🏠 Canon de Arriendo</h2>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Nuevo Monto Mensual ($)</label>
+            <input 
+              type="number" 
+              required 
+              autoFocus
+              value={amount}
+              onChange={e => setAmount(e.target.value)}
+              style={{ padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', fontSize: '1rem' }}
+            />
+          </div>
+          <div className="flex gap-3 mt-4">
+            <button type="button" onClick={onClose} className="btn btn-outline" style={{ flex: 1 }}>Cancelar</button>
+            <button type="submit" disabled={isSubmitting} className="btn btn-primary" style={{ flex: 1 }}>
+              {isSubmitting ? 'Guardando...' : 'Guardar'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function ChangeTenantModal({ isOpen, onClose, propertyId, tenancyId }: { isOpen: boolean, onClose: () => void, propertyId: string, tenancyId: string }) {
+  const [selectedTenantId, setSelectedTenantId] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
+  const { activeOrganization } = useOrganization();
+
+  const { data: tenantsData } = useQuery<PaginatedResponse<TenantDto>>({
+    queryKey: ['tenants', activeOrganization?.id, 'change-modal-list'],
+    queryFn: async () => {
+      const resp = await api.get('/tenants?limit=100&isActive=true');
+      return resp.data;
+    },
+    enabled: isOpen && !!activeOrganization,
+  });
+
+  const tenants = tenantsData?.data || [];
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTenantId) return;
+    
+    setIsSubmitting(true);
+    try {
+      await api.patch(`/properties/${propertyId}/tenancy/${tenancyId}/tenant`, { tenantId: selectedTenantId });
+      queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['active-tenancy', propertyId] });
+      toast.success('Inquilino actualizado');
+      onClose();
+    } catch (e) {
+      toast.error('Error al actualizar inquilino');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content animate-slide-up" onClick={e => e.stopPropagation()} style={{ maxWidth: '450px', padding: '2rem' }}>
+        <h2 className="font-heading" style={{ marginBottom: '1rem', fontSize: '1.5rem' }}>👤 Cambiar Inquilino</h2>
+        <p className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+          Selecciona el inquilino real para asociar a este contrato histórico.
+        </p>
+        
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Seleccionar Arrendatario</label>
+            <select 
+              value={selectedTenantId}
+              onChange={e => setSelectedTenantId(e.target.value)}
+              required 
+              style={{ padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', fontSize: '0.9rem', width: '100%' }}
+            >
+              <option value="">Seleccione un inquilino...</option>
+              {tenants.map((t: TenantDto) => (
+                <option key={t.id} value={t.id}>{t.name} ({t.documentId})</option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="flex gap-3 mt-4">
+            <button type="button" onClick={onClose} className="btn btn-outline" style={{ flex: 1 }}>Cancelar</button>
+            <button type="submit" disabled={isSubmitting || !selectedTenantId} className="btn btn-primary" style={{ flex: 1 }}>
+              {isSubmitting ? 'Actualizando...' : 'Actualizar Inquilino'}
             </button>
           </div>
         </form>

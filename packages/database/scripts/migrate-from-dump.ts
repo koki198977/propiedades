@@ -16,8 +16,8 @@ async function migrate() {
   const sqlContent = fs.readFileSync(sqlPath, 'utf-8');
 
   // 1. Obtener contexto (Usuario y Organización)
-  const user = await prisma.user.findFirst({ where: { email: 'jorgealvarezpinto77@gmail.com' } }) || await prisma.user.findFirst();
-  const organization = await prisma.organization.findFirst({ where: { members: { some: { userId: user?.id } } } }) || await prisma.organization.findFirst();
+  const user = await prisma.user.findFirst({ where: { email: 'yagnamsastrepropiedades@gmail.com' } });
+  const organization = await prisma.organization.findFirst({ where: { slug: 'yagnampropiedades' } });
 
   if (!organization || !user) {
     console.error('❌ No se encontró una organización o usuario en la DB local. Por favor crea uno primero.');

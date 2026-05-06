@@ -227,6 +227,20 @@ export class PrismaPropertyRepository implements IPropertyRepository {
     });
   }
 
+  async updateMonthlyRent(tenancyId: string, amount: number): Promise<void> {
+    await this.prisma.propertyTenant.update({
+      where: { id: tenancyId },
+      data: { monthlyRent: amount },
+    });
+  }
+
+  async updateTenancyTenant(tenancyId: string, tenantId: string): Promise<void> {
+    await this.prisma.propertyTenant.update({
+      where: { id: tenancyId },
+      data: { tenantId },
+    });
+  }
+
   async terminateTenancy(tenancyId: string, data: any): Promise<void> {
     await this.prisma.propertyTenant.update({
       where: { id: tenancyId },

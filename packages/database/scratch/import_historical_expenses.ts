@@ -11,8 +11,8 @@ async function main() {
 
   console.log('--- Starting Expenses & Egresos Import ---');
 
-  const RECORDED_BY_ID = '66cb2d07-f259-400e-a708-c7891089108d';
-  const ORG_ID = '25b93887-5a4a-4cfc-b63f-4c7ca8abbb84';
+  const RECORDED_BY_ID = '0092d639-298f-4e19-8fc9-e261f62172c0'; // Sebastian
+  const ORG_ID = 'f783eeca-1021-48c8-b280-ef94b0f5635d'; // yagnampropiedades
   
   // 1. Parser Helpers
   const getInserts = (tableName: string) => {
