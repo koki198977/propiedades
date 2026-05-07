@@ -55,11 +55,11 @@ export class LoginUseCase {
     return {
       accessToken: this.jwtService.sign(payload, {
         secret: this.configService.get('JWT_SECRET'),
-        expiresIn: this.configService.get('JWT_EXPIRES_IN', '7d'),
+        expiresIn: this.configService.get<string>('JWT_EXPIRES_IN', '30d'),
       }),
       refreshToken: this.jwtService.sign(payload, {
         secret: this.configService.get('JWT_REFRESH_SECRET'),
-        expiresIn: this.configService.get('JWT_REFRESH_EXPIRES_IN', '7d'),
+        expiresIn: this.configService.get('JWT_REFRESH_EXPIRES_IN', '30d'),
       }),
     };
   }

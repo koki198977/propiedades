@@ -140,12 +140,14 @@ export default function PaymentsPage() {
                value={searchTerm}
                onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                style={{ 
-                 padding: '0.5rem 1rem', 
+                 padding: '0.6rem 1rem', 
                  borderRadius: '2rem', 
                  border: '1px solid var(--border)', 
                  fontSize: '0.875rem', 
-                 width: '300px',
-                 background: 'white'
+                 width: '100%',
+                 maxWidth: '350px',
+                 background: 'white',
+                 boxShadow: '0 2px 4px rgba(0,0,0,0.03)'
                }}
              />
           </div>
@@ -166,12 +168,12 @@ export default function PaymentsPage() {
                   <tr><td colSpan={6} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>No se encontraron resultados para "{searchTerm}"</td></tr>
                 ) : currentPayments.map((payment) => (
                   <tr key={payment.id} style={{ borderTop: '1px solid var(--border-light)' }}>
-                    <td style={{ padding: '1.25rem 1.5rem' }}>
+                    <td style={{ padding: '1.25rem 1.5rem' }} className="nowrap">
                       <div style={{ fontWeight: 600 }}>{formatDate(payment.paymentDate)}</div>
-                      <div className="text-muted" style={{ fontSize: '0.75rem' }}>{payment.notes || 'Arriendo'}</div>
+                      <div className="text-muted" style={{ fontSize: '0.75rem', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{payment.notes || 'Arriendo'}</div>
                     </td>
                     <td style={{ padding: '1.25rem 1.5rem' }}>
-                      <div style={{ fontWeight: 600 }}>{payment.propertyTenant.property.address}</div>
+                      <div style={{ fontWeight: 600, maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{payment.propertyTenant.property.address}</div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{payment.propertyTenant.tenant.name}</div>
                     </td>
                     <td style={{ padding: '1.25rem 1.5rem' }}>
@@ -179,7 +181,7 @@ export default function PaymentsPage() {
                         {PaymentMethodLabels[payment.paymentMethod]}
                       </span>
                     </td>
-                    <td style={{ padding: '1.25rem 1.5rem', fontWeight: 800, fontSize: '1rem', color: '#27ae60' }}>
+                    <td style={{ padding: '1.25rem 1.5rem', fontWeight: 800, fontSize: '1rem', color: '#27ae60' }} className="nowrap">
                       + ${Number(payment.amount).toLocaleString('es-CL')}
                     </td>
                     <td style={{ padding: '1.25rem 1.5rem' }}>

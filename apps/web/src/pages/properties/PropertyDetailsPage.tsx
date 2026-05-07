@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { useParams, Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -89,6 +89,7 @@ export default function PropertyDetailsPage() {
   const [isEditRentOpen, setIsEditRentOpen] = useState(false);
   const [isChangeTenantOpen, setIsChangeTenantOpen] = useState(false);
   const [isTerminateModalOpen, setIsTerminateModalOpen] = useState(false);
+  const [isEditStartDateOpen, setIsEditStartDateOpen] = useState(false);
   const [returnDepositTenancy, setReturnDepositTenancy] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -116,9 +117,10 @@ export default function PropertyDetailsPage() {
       const resp = await api.get(`/properties/${id}`);
       return resp.data;
     },
+    placeholderData: keepPreviousData
   });
 
-  const { data: utilities, isLoading: isLoadingUtils } = useQuery<UtilityDto[]>({
+  const { data: utilities } = useQuery<UtilityDto[]>({
     queryKey: ['utilities', id],
     queryFn: async () => {
       const resp = await api.get(`/utilities/property/${id}`);
@@ -132,6 +134,7 @@ export default function PropertyDetailsPage() {
       const resp = await api.get(`/properties/${id}/active-tenancy`);
       return resp.data || null;
     },
+    placeholderData: keepPreviousData
   });
 
   const queryClient = useQueryClient();
@@ -250,10 +253,14 @@ export default function PropertyDetailsPage() {
   };
 
 
-  if (isLoadingProp || isLoadingUtils || isLoadingTenancy) {
+  // Only show the hard loading state on initial mount (no data)
+  const isInitialLoading = (isLoadingProp && !property) || (isLoadingTenancy && !activeTenancy);
+
+  if (isInitialLoading) {
     return (
-      <div className="container" style={{ paddingTop: '4rem', textAlign: 'center' }}>
-        <p className="text-muted">Cargando detalles de la propiedad...</p>
+      <div className="container" style={{ paddingTop: '8rem', textAlign: 'center' }}>
+        <div className="animate-pulse" style={{ fontSize: '4rem', marginBottom: '1rem' }}>🏢</div>
+        <p className="text-muted" style={{ fontWeight: 600 }}>Cargando detalles de la propiedad...</p>
       </div>
     );
   }
@@ -672,13 +679,6 @@ export default function PropertyDetailsPage() {
                       <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)' }}>
                         ${Number(activeTenancy.monthlyRent).toLocaleString('es-CL')}
                       </div>
-                      <MonthlyRentModal 
-                        isOpen={isEditRentOpen}
-                        onClose={() => setIsEditRentOpen(false)}
-                        initialAmount={Number(activeTenancy.monthlyRent)}
-                        propertyId={property.id}
-                        tenancyId={activeTenancy.id}
-                      />
                     </div>
                     
                     <div style={{ backgroundColor: 'white', padding: '1.25rem', borderRadius: '0.75rem', border: '1px solid var(--border-light)', position: 'relative' }}>
@@ -692,13 +692,6 @@ export default function PropertyDetailsPage() {
                             {activeTenancy.securityDeposit ? 'EDITAR' : 'REGISTRAR'}
                           </button>
                         )}
-                        <SecurityDepositModal 
-                          isOpen={isEditDepositOpen}
-                          onClose={() => setIsEditDepositOpen(false)}
-                          initialAmount={activeTenancy.securityDeposit ? Number(activeTenancy.securityDeposit) : 0}
-                          propertyId={property.id}
-                          tenancyId={activeTenancy.id}
-                        />
                       </div>
                       <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#f59e0b' }}>
                         ${activeTenancy.securityDeposit ? Number(activeTenancy.securityDeposit).toLocaleString('es-CL') : '0'}
@@ -716,7 +709,15 @@ export default function PropertyDetailsPage() {
                     </div>
                     <div className="flex justify-between items-center">
                       <div>
-                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>INICIO</div>
+                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span>INICIO</span>
+                          <button 
+                            onClick={() => setIsEditStartDateOpen(true)}
+                            style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.6rem', fontWeight: 800, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+                          >
+                            EDITAR
+                          </button>
+                        </div>
                         <div style={{ fontWeight: 800 }}>{formatDate(activeTenancy.startDate)}</div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
@@ -834,6 +835,50 @@ export default function PropertyDetailsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modals - Moved to end for maximum stability */}
+      {property && activeTenancy && (
+        <>
+          <MonthlyRentModal 
+            key={`rent-${activeTenancy.id}-${activeTenancy.monthlyRent}`}
+            isOpen={isEditRentOpen}
+            onClose={() => setIsEditRentOpen(false)}
+            initialAmount={Number(activeTenancy.monthlyRent)}
+            propertyId={property.id}
+            tenancyId={activeTenancy.id}
+          />
+          <SecurityDepositModal 
+            key={`deposit-${activeTenancy.id}-${activeTenancy.securityDeposit}`}
+            isOpen={isEditDepositOpen}
+            onClose={() => setIsEditDepositOpen(false)}
+            initialAmount={activeTenancy.securityDeposit ? Number(activeTenancy.securityDeposit) : 0}
+            propertyId={property.id}
+            tenancyId={activeTenancy.id}
+          />
+          <EditStartDateModal 
+            key={`startdate-${activeTenancy.id}-${activeTenancy.startDate}`}
+            isOpen={isEditStartDateOpen}
+            onClose={() => setIsEditStartDateOpen(false)}
+            propertyId={property.id}
+            tenancyId={activeTenancy.id}
+            initialDate={activeTenancy.startDate}
+          />
+          <ChangeTenantModal 
+            key={`change-${activeTenancy.id}`}
+            isOpen={isChangeTenantOpen}
+            onClose={() => setIsChangeTenantOpen(false)}
+            propertyId={property.id}
+            tenancyId={activeTenancy.id}
+          />
+          <TerminateTenancyModal 
+            key={`terminate-${activeTenancy.id}`}
+            isOpen={isTerminateModalOpen}
+            onClose={() => setIsTerminateModalOpen(false)}
+            propertyId={property.id}
+            tenancyId={activeTenancy.id}
+          />
+        </>
       )}
     </div>
   );
@@ -2075,23 +2120,28 @@ function SecurityDepositModal({ isOpen, onClose, initialAmount, propertyId, tena
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content animate-slide-up" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', padding: '2rem' }}>
-        <h2 className="font-heading" style={{ marginBottom: '1.5rem', fontSize: '1.5rem' }}>💰 Mes de Garantía</h2>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Monto de la Garantía ($)</label>
+      <div className="modal-content animate-slide-up" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', padding: '2.5rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🛡️</div>
+          <h2 className="font-heading" style={{ fontSize: '1.75rem', margin: 0 }}>Mes de Garantía</h2>
+          <p className="text-muted" style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>Actualiza el monto de la garantía del contrato.</p>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+          <div className="flex flex-col gap-3">
+            <label style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Monto Garantía ($)</label>
             <input 
               type="number" 
               required 
               autoFocus
               value={amount}
               onChange={e => setAmount(e.target.value)}
-              style={{ padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', fontSize: '1rem' }}
+              style={{ padding: '1rem', borderRadius: '1rem', border: '2px solid var(--border)', fontSize: '1.25rem', fontWeight: 700, width: '100%', textAlign: 'center' }}
             />
           </div>
-          <div className="flex gap-3 mt-4">
-            <button type="button" onClick={onClose} className="btn btn-outline" style={{ flex: 1 }}>Cancelar</button>
-            <button type="submit" disabled={isSubmitting} className="btn btn-primary" style={{ flex: 1 }}>
+          <div className="flex gap-4">
+            <button type="button" onClick={onClose} className="btn btn-outline" style={{ flex: 1, padding: '1rem', borderRadius: '1rem', fontWeight: 700 }}>Cancelar</button>
+            <button type="submit" disabled={isSubmitting} className="btn btn-primary" style={{ flex: 1, padding: '1rem', borderRadius: '1rem', fontWeight: 700 }}>
               {isSubmitting ? 'Guardando...' : 'Guardar'}
             </button>
           </div>
@@ -2129,23 +2179,28 @@ function MonthlyRentModal({ isOpen, onClose, initialAmount, propertyId, tenancyI
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content animate-slide-up" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', padding: '2rem' }}>
-        <h2 className="font-heading" style={{ marginBottom: '1.5rem', fontSize: '1.5rem' }}>🏠 Canon de Arriendo</h2>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Nuevo Monto Mensual ($)</label>
+      <div className="modal-content animate-slide-up" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', padding: '2.5rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>💰</div>
+          <h2 className="font-heading" style={{ fontSize: '1.75rem', margin: 0 }}>Canon de Arriendo</h2>
+          <p className="text-muted" style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>Actualiza el monto mensual del contrato.</p>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+          <div className="flex flex-col gap-3">
+            <label style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Monto Mensual ($)</label>
             <input 
               type="number" 
               required 
               autoFocus
               value={amount}
               onChange={e => setAmount(e.target.value)}
-              style={{ padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', fontSize: '1rem' }}
+              style={{ padding: '1rem', borderRadius: '1rem', border: '2px solid var(--border)', fontSize: '1.25rem', fontWeight: 700, width: '100%', textAlign: 'center' }}
             />
           </div>
-          <div className="flex gap-3 mt-4">
-            <button type="button" onClick={onClose} className="btn btn-outline" style={{ flex: 1 }}>Cancelar</button>
-            <button type="submit" disabled={isSubmitting} className="btn btn-primary" style={{ flex: 1 }}>
+          <div className="flex gap-4">
+            <button type="button" onClick={onClose} className="btn btn-outline" style={{ flex: 1, padding: '1rem', borderRadius: '1rem', fontWeight: 700 }}>Cancelar</button>
+            <button type="submit" disabled={isSubmitting} className="btn btn-primary" style={{ flex: 1, padding: '1rem', borderRadius: '1rem', fontWeight: 700 }}>
               {isSubmitting ? 'Guardando...' : 'Guardar'}
             </button>
           </div>
@@ -2220,6 +2275,62 @@ function ChangeTenantModal({ isOpen, onClose, propertyId, tenancyId }: { isOpen:
             <button type="button" onClick={onClose} className="btn btn-outline" style={{ flex: 1 }}>Cancelar</button>
             <button type="submit" disabled={isSubmitting || !selectedTenantId} className="btn btn-primary" style={{ flex: 1 }}>
               {isSubmitting ? 'Actualizando...' : 'Actualizar Inquilino'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function EditStartDateModal({ isOpen, onClose, propertyId, tenancyId, initialDate }: { isOpen: boolean, onClose: () => void, propertyId: string, tenancyId: string, initialDate: string }) {
+  const [startDate, setStartDate] = useState(initialDate.split('T')[0]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      await api.patch(`/properties/${propertyId}/tenancy/${tenancyId}/start-date`, { startDate });
+      queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['active-tenancy', propertyId] });
+      toast.success('Fecha de inicio actualizada');
+      onClose();
+    } catch (e) {
+      toast.error('Error al actualizar fecha de inicio');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content animate-slide-up" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', padding: '2.5rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🗓️</div>
+          <h2 className="font-heading" style={{ fontSize: '1.75rem', margin: 0 }}>Vigencia Contrato</h2>
+          <p className="text-muted" style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>Ajusta la fecha de inicio del arriendo.</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+          <div className="flex flex-col gap-3">
+            <label style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Nueva Fecha de Inicio</label>
+            <input 
+              type="date" 
+              required 
+              autoFocus
+              value={startDate}
+              onChange={e => setStartDate(e.target.value)}
+              style={{ padding: '1.25rem', borderRadius: '1.25rem', border: '2px solid var(--border)', fontSize: '1.25rem', fontWeight: 800, width: '100%', textAlign: 'center', backgroundColor: '#f8fafc' }}
+            />
+          </div>
+          <div className="flex gap-4">
+            <button type="button" onClick={onClose} className="btn btn-outline" style={{ flex: 1, padding: '1rem', borderRadius: '1rem', fontWeight: 700 }}>Cancelar</button>
+            <button type="submit" disabled={isSubmitting} className="btn btn-primary" style={{ flex: 1, padding: '1rem', borderRadius: '1rem', fontWeight: 700 }}>
+              {isSubmitting ? 'Guardando...' : 'Guardar'}
             </button>
           </div>
         </form>

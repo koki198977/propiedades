@@ -12,6 +12,7 @@ export interface IPropertyRepository {
   updateSecurityDeposit(tenancyId: string, amount: number): Promise<void>;
   updateMonthlyRent(tenancyId: string, amount: number): Promise<void>;
   updateTenancyTenant(tenancyId: string, tenantId: string): Promise<void>;
+  updateTenancyStartDate(tenancyId: string, startDate: Date): Promise<void>;
   terminateTenancy(tenancyId: string, data: any): Promise<void>;
 }
 

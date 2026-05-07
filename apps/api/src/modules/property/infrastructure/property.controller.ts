@@ -167,6 +167,13 @@ export class PropertyController {
     return this.propertyRepo.updateTenancyTenant(tenancyId, tenantId);
   }
 
+  @Patch(':id/tenancy/:tenancyId/start-date')
+  @RequireRole(OrganizationRole.ADMIN, OrganizationRole.EDITOR)
+  @ApiOperation({ summary: 'Actualizar la fecha de inicio de un contrato' })
+  async updateTenancyStartDate(@Param('tenancyId') tenancyId: string, @Body('startDate') startDate: string) {
+    return this.propertyRepo.updateTenancyStartDate(tenancyId, new Date(startDate));
+  }
+
   @Patch(':id/tenancy/:tenancyId/terminate')
   @RequireRole(OrganizationRole.ADMIN, OrganizationRole.EDITOR)
   @ApiOperation({ summary: 'Finalizar el contrato de arriendo actual' })

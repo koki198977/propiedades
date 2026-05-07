@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import { FinancialStatementDto, UtilityType, UtilityTypeLabels } from '@propiedades/types';
@@ -40,12 +40,12 @@ function DataTable<T extends { id: string | number; date: string; amount: number
 
   return (
     <section className="card" style={{ padding: 0, overflow: 'hidden' }}>
-      <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border)', background: 'rgba(0,0,0,0.02)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <h3 style={{ margin: 0 }}>{title}</h3>
-        <div style={{ position: 'relative' }}>
+      <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', background: 'rgba(0,0,0,0.02)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <h3 style={{ margin: 0, fontSize: '1.125rem' }}>{title}</h3>
+        <div style={{ position: 'relative', width: '100%', maxWidth: '300px' }}>
           <input 
             type="text" 
-            placeholder="Buscar en esta tabla..." 
+            placeholder="Buscar..." 
             value={searchTerm}
             onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
             style={{ 
@@ -53,14 +53,14 @@ function DataTable<T extends { id: string | number; date: string; amount: number
               borderRadius: '2rem', 
               border: '1px solid var(--border)', 
               fontSize: '0.875rem', 
-              width: '250px',
+              width: '100%',
               background: 'white',
               boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
             }}
           />
         </div>
       </div>
-      <div style={{ overflowX: 'auto' }}>
+      <div className="table-responsive">
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)', background: '#fafafa' }}>
@@ -212,6 +212,13 @@ export default function FinancialReportsPage() {
   });
 
   const [isWithdrawalModalOpen, setIsWithdrawalModalOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const getQueryParams = () => {
     const today = new Date();
@@ -253,26 +260,26 @@ export default function FinancialReportsPage() {
   });
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex justify-between items-end flex-wrap gap-4">
-        <div>
-          <h1 className="font-heading" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>
+    <div className="flex flex-col gap-6 sm:gap-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+        <div style={{ width: '100%', maxWidth: '600px' }}>
+          <h1 className="font-heading" style={{ fontSize: 'clamp(1.5rem, 6vw, 2.5rem)', marginBottom: '0.25rem' }}>
             {dateRange === 'all' ? 'Balance General' : 'Rendición de Caja'}
           </h1>
-          <p className="text-muted">
+          <p className="text-muted" style={{ fontSize: '0.8rem', lineHeight: 1.4 }}>
             {dateRange === 'all' 
               ? 'Consolidado acumulado de todos los ingresos y gastos desde el origen.' 
               : 'Balance detallado de ingresos y egresos por periodo.'}
           </p>
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex gap-2 w-full sm:w-auto">
           <button 
             onClick={() => setIsWithdrawalModalOpen(true)}
             className="btn btn-outline"
-            style={{ padding: '0.75rem 1.5rem', borderRadius: '0.75rem', borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 700 }}
+            style={{ flex: 1, padding: '0.75rem 1rem', borderRadius: '0.75rem', borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 700, fontSize: '0.875rem' }}
           >
-            💸 Registrar Retiro de Dinero
+            💸 Registrar Retiro
           </button>
         </div>
 
@@ -281,21 +288,60 @@ export default function FinancialReportsPage() {
           onClose={() => setIsWithdrawalModalOpen(false)} 
         />
 
-        <div className="flex gap-2 p-1 glass" style={{ borderRadius: '0.75rem' }}>
-          {(['today', 'week', 'month', 'year', 'all', 'custom'] as const).map(range => (
-            <button
-              key={range}
-              onClick={() => setDateRange(range)}
-              className={`btn ${dateRange === range ? 'btn-primary' : ''}`}
-              style={{ padding: '0.5rem 1.25rem', fontSize: '0.75rem', border: 'none', background: dateRange === range ? '' : 'transparent' }}
-            >
-              {range === 'today' ? 'Hoy' : 
-               range === 'week' ? 'Semana' : 
-               range === 'month' ? 'Mes' : 
-               range === 'year' ? 'Año' : 
-               range === 'all' ? 'Histórico' : 'Filtro'}
-            </button>
-          ))}
+        <div className="flex gap-2 w-full sm:w-auto" style={{ order: isMobile ? -1 : 0 }}>
+          {isMobile ? (
+            <div style={{ position: 'relative', width: '100%' }}>
+              <select 
+                value={dateRange}
+                onChange={e => setDateRange(e.target.value as any)}
+                className="glass"
+                style={{ 
+                  width: '100%', 
+                  padding: '0.85rem 1rem', 
+                  borderRadius: '1rem', 
+                  border: '1.5px solid var(--border)', 
+                  fontSize: '0.9rem', 
+                  fontWeight: 700,
+                  appearance: 'none',
+                  background: 'white',
+                  color: 'var(--text-main)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
+                }}
+              >
+                <option value="today">📅 Hoy</option>
+                <option value="week">📅 Semana</option>
+                <option value="month">📅 Mes</option>
+                <option value="year">📅 Año</option>
+                <option value="all">📅 Histórico</option>
+                <option value="custom">🔍 Filtro Personalizado</option>
+              </select>
+              <div style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', fontSize: '0.8rem', opacity: 0.5 }}>▼</div>
+            </div>
+          ) : (
+            <div className="flex gap-1 p-1 glass" style={{ borderRadius: '0.75rem', width: 'auto' }}>
+              {(['today', 'week', 'month', 'year', 'all', 'custom'] as const).map(range => (
+                <button
+                  key={range}
+                  onClick={() => setDateRange(range)}
+                  className={`btn ${dateRange === range ? 'btn-primary' : ''}`}
+                  style={{ 
+                    padding: '0.5rem 1rem', 
+                    fontSize: '0.7rem', 
+                    border: 'none', 
+                    whiteSpace: 'nowrap',
+                    background: dateRange === range ? '' : 'transparent',
+                    minWidth: '70px'
+                  }}
+                >
+                  {range === 'today' ? 'Hoy' : 
+                   range === 'week' ? 'Semana' : 
+                   range === 'month' ? 'Mes' : 
+                   range === 'year' ? 'Año' : 
+                   range === 'all' ? 'Histórico' : 'Filtro'}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -329,22 +375,22 @@ export default function FinancialReportsPage() {
       ) : data && (
         <>
           {/* Summary KPIs */}
-          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
-            <div className="card" style={{ borderLeft: '6px solid var(--success)', background: 'linear-gradient(to right, rgba(46, 204, 113, 0.05), white)' }}>
-              <span className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ingresos Totales</span>
-              <div style={{ fontSize: '2rem', fontWeight: 900, color: '#27ae60', marginTop: '0.5rem' }}>
+          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '0.75rem' }}>
+            <div className="card" style={{ borderLeft: '6px solid var(--success)', background: 'linear-gradient(to right, rgba(46, 204, 113, 0.05), white)', padding: '1rem' }}>
+              <span className="text-muted" style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ingresos Totales</span>
+              <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#27ae60', marginTop: '0.25rem' }}>
                 ${data.summary.totalIncome.toLocaleString('es-CL')}
               </div>
             </div>
-            <div className="card" style={{ borderLeft: '6px solid var(--danger)', background: 'linear-gradient(to right, rgba(231, 76, 60, 0.05), white)' }}>
-              <span className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Egresos y Costos</span>
-              <div style={{ fontSize: '2rem', fontWeight: 900, color: '#c0392b', marginTop: '0.5rem' }}>
+            <div className="card" style={{ borderLeft: '6px solid var(--danger)', background: 'linear-gradient(to right, rgba(231, 76, 60, 0.05), white)', padding: '1rem' }}>
+              <span className="text-muted" style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Egresos y Costos</span>
+              <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#c0392b', marginTop: '0.25rem' }}>
                 ${(data.summary.totalExpenses + data.summary.totalCosts).toLocaleString('es-CL')}
               </div>
             </div>
-            <div className="card" style={{ background: 'var(--primary)', color: 'white', boxShadow: '0 10px 20px rgba(74, 58, 255, 0.2)' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', opacity: 0.8, letterSpacing: '0.05em' }}>Resultado Neto Final</span>
-              <div style={{ fontSize: '2rem', fontWeight: 900, marginTop: '0.5rem' }}>
+            <div className="card" style={{ background: 'var(--primary)', color: 'white', boxShadow: '0 10px 20px rgba(74, 58, 255, 0.2)', padding: '1rem' }}>
+              <span style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', opacity: 0.8, letterSpacing: '0.05em' }}>Resultado Neto</span>
+              <div style={{ fontSize: '1.75rem', fontWeight: 900, marginTop: '0.25rem' }}>
                 ${data.summary.netResult.toLocaleString('es-CL')}
               </div>
             </div>
@@ -371,7 +417,7 @@ export default function FinancialReportsPage() {
             )}
           />
 
-          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
+          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 350px), 1fr))', gap: '1.5rem' }}>
             <DataTable 
               title="Egresos (Servicios y Retiros)"
               data={data.expenses.items}
@@ -428,41 +474,38 @@ export default function FinancialReportsPage() {
             />
           </div>
 
-          <div className="card" style={{ background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', padding: '3rem', borderRadius: '1.5rem', border: '1px solid var(--border)' }}>
-            <h2 className="font-heading" style={{ marginBottom: '2rem', textAlign: 'center', fontSize: '2rem' }}>Resumen Consolidado</h2>
-            <div className="flex flex-col gap-6" style={{ maxWidth: '500px', margin: '0 auto' }}>
-              <div className="flex justify-between items-center" style={{ fontSize: '1.125rem' }}>
-                <span className="text-muted">Ingresos Brutos Acumulados</span>
+          <div className="card" style={{ background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', padding: 'clamp(1rem, 5vw, 3rem)', borderRadius: '1.5rem', border: '1px solid var(--border)' }}>
+            <h2 className="font-heading" style={{ marginBottom: '1.5rem', textAlign: 'center', fontSize: 'clamp(1.5rem, 4vw, 2rem)' }}>Resumen Consolidado</h2>
+            <div className="flex flex-col gap-4" style={{ maxWidth: '500px', margin: '0 auto' }}>
+              <div className="flex justify-between items-center" style={{ fontSize: '0.9rem' }}>
+                <span className="text-muted">Ingresos Brutos</span>
                 <span style={{ fontWeight: 800, color: '#27ae60' }}>+ ${data.summary.totalIncome.toLocaleString('es-CL')}</span>
               </div>
-              <div className="flex justify-between items-center" style={{ fontSize: '1.125rem' }}>
-                <span className="text-muted">Servicios y Egresos Operativos</span>
+              <div className="flex justify-between items-center" style={{ fontSize: '0.9rem' }}>
+                <span className="text-muted">Servicios y Egresos</span>
                 <span style={{ fontWeight: 800, color: '#c0392b' }}>- ${data.summary.totalExpenses.toLocaleString('es-CL')}</span>
               </div>
-              <div className="flex justify-between items-center" style={{ fontSize: '1.125rem', marginBottom: '1.5rem' }}>
-                <span className="text-muted">Mantenimiento y Costos Fijos</span>
+              <div className="flex justify-between items-center" style={{ fontSize: '0.9rem' }}>
+                <span className="text-muted">Mantenimiento y Costos</span>
                 <span style={{ fontWeight: 800, color: '#c0392b' }}>- ${data.summary.totalCosts.toLocaleString('es-CL')}</span>
               </div>
-              <div style={{ height: '2px', background: 'var(--border)', margin: '1rem 0' }}></div>
+              <div style={{ height: '1px', background: 'var(--border)', margin: '0.5rem 0' }}></div>
               <div className="flex justify-between items-center">
-                <span style={{ fontWeight: 800, fontSize: '1.5rem' }}>SALDO LÍQUIDO</span>
+                <span style={{ fontWeight: 800, fontSize: '1.25rem' }}>SALDO LÍQUIDO</span>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: 900, fontSize: '2.5rem', color: data.summary.netResult >= 0 ? 'var(--primary)' : 'var(--danger)' }}>
+                  <div style={{ fontWeight: 900, fontSize: 'clamp(1.75rem, 5vw, 2.5rem)', color: data.summary.netResult >= 0 ? 'var(--primary)' : 'var(--danger)' }}>
                     ${data.summary.netResult.toLocaleString('es-CL')}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: '-0.5rem' }}>
-                    {data.summary.netResult >= 0 ? 'Excedente' : 'Déficit'}
                   </div>
                 </div>
               </div>
             </div>
-            <div style={{ marginTop: '3rem', textAlign: 'center' }}>
+            <div style={{ marginTop: '2rem', textAlign: 'center' }}>
               <button 
                 onClick={() => window.print()} 
                 className="btn btn-primary"
-                style={{ padding: '1rem 2.5rem', borderRadius: '3rem', display: 'inline-flex', alignItems: 'center', gap: '0.75rem', boxShadow: '0 10px 20px rgba(74, 58, 255, 0.2)' }}
+                style={{ width: '100%', maxWidth: '300px', padding: '0.875rem', borderRadius: '3rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', boxShadow: '0 10px 20px rgba(74, 58, 255, 0.2)', fontSize: '0.875rem' }}
               >
-                🖨 Exportar Reporte Completo (PDF)
+                🖨 Exportar Reporte (PDF)
               </button>
             </div>
           </div>

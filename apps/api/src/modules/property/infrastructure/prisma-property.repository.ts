@@ -241,6 +241,13 @@ export class PrismaPropertyRepository implements IPropertyRepository {
     });
   }
 
+  async updateTenancyStartDate(tenancyId: string, startDate: Date): Promise<void> {
+    await this.prisma.propertyTenant.update({
+      where: { id: tenancyId },
+      data: { startDate },
+    });
+  }
+
   async terminateTenancy(tenancyId: string, data: any): Promise<void> {
     await this.prisma.propertyTenant.update({
       where: { id: tenancyId },

@@ -398,6 +398,32 @@ h1, h2, h3, h4, .font-heading {
   .container { padding: 0 1rem; }
 }
 
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  border-radius: 0.5rem;
+}
+
+.table-responsive table {
+  min-width: 800px;
+}
+
+@media (max-width: 768px) {
+  .table-responsive table {
+    min-width: 650px;
+  }
+  .table-responsive th,
+  .table-responsive td {
+    padding: 0.75rem 0.5rem !important;
+    font-size: 0.7rem !important;
+  }
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
 /* --- Showcase Premium Styles --- */
 .showcase-card {
   cursor: pointer;
