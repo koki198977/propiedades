@@ -121,6 +121,7 @@ export interface CreatePropertyDto {
   paymentDueDay: number      // 1–31
   notes?: string
   expectedRent?: number      // Precio promocional público
+  notifyTenantOnPaymentDay?: boolean
 }
 
 export interface UpdatePropertyDto extends Partial<CreatePropertyDto> {}
@@ -170,6 +171,7 @@ export interface PropertyDto {
   paymentDueDay: number
   notes?: string
   expectedRent?: number | null
+  notifyTenantOnPaymentDay?: boolean
   meters: PropertyMeterDto[]
   createdAt: string
   updatedAt: string

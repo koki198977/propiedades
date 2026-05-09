@@ -665,7 +665,7 @@ export default function PropertyDetailsPage() {
                     </div>
                   </div>
                   
-                  <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
+                  <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
                     <div style={{ backgroundColor: 'white', padding: '1.25rem', borderRadius: '0.75rem', border: '1px solid var(--border-light)' }}>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', justifyContent: 'space-between' }}>
                         <span>Canon de Arriendo</span>
@@ -699,6 +699,43 @@ export default function PropertyDetailsPage() {
                       {activeTenancy.securityDeposit && activeTenancy.isSecurityDepositReturned && (
                         <div style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', fontSize: '0.65rem', background: '#10b981', color: 'white', padding: '0.3rem 0.6rem', borderRadius: '0.5rem', fontWeight: 900, boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)' }}>DEVUELTO</div>
                       )}
+                    </div>
+
+                    <div style={{ backgroundColor: 'white', padding: '1.25rem', borderRadius: '0.75rem', border: '1px solid var(--border-light)' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Día de Pago
+                      </div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827' }}>
+                        Día {property.paymentDueDay}
+                      </div>
+                      <button
+                        onClick={async () => {
+                          try {
+                            await api.patch(`/properties/${property.id}`, { notifyTenantOnPaymentDay: !property.notifyTenantOnPaymentDay });
+                            queryClient.invalidateQueries({ queryKey: ['property', id] });
+                            toast.success(property.notifyTenantOnPaymentDay ? 'Notificación al arrendatario desactivada' : 'Notificación al arrendatario activada');
+                          } catch { toast.error('Error al actualizar'); }
+                        }}
+                        style={{ 
+                          marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', 
+                          background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: '0.65rem',
+                          color: property.notifyTenantOnPaymentDay ? '#10b981' : 'var(--text-muted)'
+                        }}
+                      >
+                        <div style={{ 
+                          width: '32px', height: '18px', borderRadius: '9px', position: 'relative',
+                          backgroundColor: property.notifyTenantOnPaymentDay ? '#10b981' : '#d1d5db',
+                          transition: 'background-color 0.2s'
+                        }}>
+                          <div style={{ 
+                            width: '14px', height: '14px', borderRadius: '50%', backgroundColor: 'white',
+                            position: 'absolute', top: '2px', 
+                            left: property.notifyTenantOnPaymentDay ? '16px' : '2px',
+                            transition: 'left 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
+                          }} />
+                        </div>
+                        Notificar arrendatario
+                      </button>
                     </div>
                   </div>
 

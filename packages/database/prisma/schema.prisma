@@ -96,6 +96,7 @@ model Property {
   notes           String?
   customCategory  String?
   expectedRent    Int?
+  notifyTenantOnPaymentDay Boolean @default(false)
   isActive        Boolean           @default(true)
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt

@@ -1,15 +1,19 @@
-import { Controller, Get, Patch, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, UseGuards, Request, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../shared/infrastructure/guards/jwt-auth.guard';
 import { NotificationRepository } from './notification.repository';
+import { CheckExpirationsCron } from '../application/check-expirations.cron';
 
 @ApiTags('Notifications')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('notifications')
 export class NotificationController {
+  private readonly logger = new Logger(NotificationController.name);
+
   constructor(
     private readonly notificationRepo: NotificationRepository,
+    private readonly checkExpirationsCron: CheckExpirationsCron,
   ) {}
 
   @Get()
@@ -32,5 +36,13 @@ export class NotificationController {
   async readAll(@Request() req: any) {
     await this.notificationRepo.markAllAsRead(req.user.id);
     return { success: true };
+  }
+
+  @Post('trigger-cron')
+  @ApiOperation({ summary: 'Ejecutar manualmente el cron de notificaciones (testing)' })
+  async triggerCron() {
+    this.logger.log('Manual cron trigger requested');
+    await this.checkExpirationsCron.handleCron();
+    return { success: true, message: 'Cron ejecutado manualmente. Revisa los logs y correos.' };
   }
 }

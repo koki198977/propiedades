@@ -69,26 +69,58 @@ export class CheckExpirationsCron {
     const propertiesDueToday = await this.prisma.property.findMany({
       where: {
         paymentDueDay: currentDay,
+        isActive: true,
       },
-      include: { user: true }
+      include: { 
+        user: true,
+        organization: true,
+        tenants: {
+          where: { isActive: true },
+          include: { tenant: true }
+        }
+      }
     });
 
     for (const property of propertiesDueToday) {
-      const message = `Hoy es el día de pago acordado para la propiedad en ${property.address}.`;
+      const ownerMessage = `Hoy es el día de pago acordado para la propiedad en ${property.address}.`;
       
+      // Notificación para el dueño
       await this.notificationRepo.create({
         userId: property.userId,
         type: NotificationType.PAYMENT_DUE,
         title: 'Día de Pago en Propiedad',
-        message,
+        message: ownerMessage,
       });
 
       if (property.user.email) {
         await this.emailService.send({
           to: property.user.email,
           subject: `💰 Cobro de Arriendo: ${property.address}`,
-          html: this.wrapHtml('Cobro de Arriendo', message, property.address),
+          html: this.wrapHtml('Cobro de Arriendo', ownerMessage, property.address),
         });
+      }
+
+      // Notificación automática para el arrendatario (solo si está activada)
+      if (property.notifyTenantOnPaymentDay) {
+        const activeTenancy = property.tenants[0];
+        if (activeTenancy && activeTenancy.tenant.email) {
+          const currentMonth = new Intl.DateTimeFormat('es-CL', { month: 'long', year: 'numeric' }).format(new Date());
+          const amount = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(Number(activeTenancy.monthlyRent));
+          
+          await this.emailService.send({
+            to: activeTenancy.tenant.email,
+            subject: `📅 Recordatorio de Pago: Arriendo ${currentMonth}`,
+            html: this.wrapTenantHtml({
+              tenantName: activeTenancy.tenant.name,
+              month: currentMonth,
+              amount,
+              address: property.address,
+              organization: property.organization
+            }),
+          });
+          
+          this.logger.log(`Sent automatic payment reminder to tenant ${activeTenancy.tenant.email} for property ${property.address}`);
+        }
       }
     }
 
@@ -98,18 +130,19 @@ export class CheckExpirationsCron {
   }
 
   private async checkExpenseReminders() {
-    const fiveDaysFromNow = new Date();
-    fiveDaysFromNow.setDate(fiveDaysFromNow.getDate() + 5);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
 
     // Incluir desde ayer para no perder recordatorios si el cron corre tarde
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setHours(0, 0, 0, 0);
 
     const reminders = await this.prisma.expenseReminder.findMany({
       where: {
         isActive: true,
         nextDueDate: {
-          lte: fiveDaysFromNow,
+          lte: today,
           gte: yesterday,
         },
       },
@@ -225,6 +258,57 @@ export class CheckExpirationsCron {
         </div>
         <div class="footer">
           Este es un correo automático generado por tu sistema de gestión de propiedades.
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  private wrapTenantHtml(data: { tenantName: string, month: string, amount: string, address: string, organization: any }) {
+    const { tenantName, month, amount, address, organization } = data;
+    
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { text-align: center; margin-bottom: 30px; }
+          .card { background: #f9fafb; border-radius: 12px; padding: 30px; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+          .amount-label { color: #6b7280; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-bottom: 5px; }
+          .amount-value { font-size: 32px; font-weight: 800; color: #4f46e5; }
+          .bank-info { background: #ffffff; border-radius: 8px; padding: 15px; border: 1px solid #d1d5db; margin-top: 20px; }
+          .bank-info h3 { margin-top: 0; font-size: 16px; color: #374151; border-bottom: 1px solid #f3f4f6; padding-bottom: 8px; }
+          .bank-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px; }
+          .bank-row span:first-child { color: #6b7280; }
+          .bank-row span:last-child { font-weight: 600; color: #1f2937; }
+          .footer { font-size: 12px; color: #9ca3af; text-align: center; margin-top: 30px; border-top: 1px solid #f3f4f6; padding-top: 20px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h2 style="color: #4f46e5; margin: 0;">Yagnam Propiedades</h2>
+        </div>
+        <div class="card">
+          <div class="amount-label">Monto de Arriendo</div>
+          <div class="amount-value">${amount}</div>
+          
+          <p style="margin-top: 20px;">Estimado/a <strong>${tenantName}</strong>,</p>
+          <p>Le recordamos que hoy vence el plazo de pago del arriendo correspondiente al mes de <strong>${month}</strong> para la propiedad en ${address}.</p>
+          
+          ${organization && organization.bankName ? `
+          <div class="bank-info">
+            <h3>Datos para Transferencia</h3>
+            <div class="bank-row"><span>Banco:</span> <span>${organization.bankName}</span></div>
+            <div class="bank-row"><span>Cuenta:</span> <span>${organization.bankAccountType}</span></div>
+            <div class="bank-row"><span>N°:</span> <span>${organization.bankAccountNumber}</span></div>
+            <div class="bank-row"><span>RUT:</span> <span>${organization.bankAccountRut}</span></div>
+            ${organization.bankAccountEmail ? `<div class="bank-row"><span>Email Comprobante:</span> <span>${organization.bankAccountEmail}</span></div>` : ''}
+          </div>
+          ` : ''}
+        </div>
+        <div class="footer">
+          Este es un recordatorio automático. Si ya realizó el pago, por favor ignore este mensaje.
         </div>
       </body>
       </html>

@@ -34,6 +34,7 @@ export class UpdatePropertyUseCase {
       rol: dto.rol,
       notes: dto.notes,
       expectedRent: dto.expectedRent,
+      notifyTenantOnPaymentDay: dto.notifyTenantOnPaymentDay,
     };
 
     if (dto.contractEndDate) {
