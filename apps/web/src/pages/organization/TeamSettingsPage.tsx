@@ -6,8 +6,7 @@ import toast from 'react-hot-toast';
 import api from '@/api/axios';
 
 export default function TeamSettingsPage() {
-  const { activeOrganization, refreshOrganizations } = useOrganization();
-  const isAdmin = activeOrganization?.role === OrganizationRole.ADMIN;
+  const { activeOrganization, refreshOrganizations, isAdmin } = useOrganization();
   const queryClient = useQueryClient();
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<OrganizationRole>(OrganizationRole.VIEWER);

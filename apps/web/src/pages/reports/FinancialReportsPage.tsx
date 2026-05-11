@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import api from '@/api/axios';
 import { FinancialStatementDto, UtilityType, UtilityTypeLabels } from '@propiedades/types';
+import { useOrganization } from '../../providers/OrganizationProvider';
 import { formatDate, toLocalDateFormat } from '../../utils/dateUtils';
 
 // Componente para una tabla paginada y con búsqueda
@@ -213,6 +213,7 @@ export default function FinancialReportsPage() {
 
   const [isWithdrawalModalOpen, setIsWithdrawalModalOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const { canEdit } = useOrganization();
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -273,15 +274,17 @@ export default function FinancialReportsPage() {
           </p>
         </div>
 
-        <div className="flex gap-2 w-full sm:w-auto">
-          <button 
-            onClick={() => setIsWithdrawalModalOpen(true)}
-            className="btn btn-outline"
-            style={{ flex: 1, padding: '0.75rem 1rem', borderRadius: '0.75rem', borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 700, fontSize: '0.875rem' }}
-          >
-            💸 Registrar Retiro
-          </button>
-        </div>
+        {canEdit && (
+          <div className="flex gap-2 w-full sm:w-auto">
+            <button 
+              onClick={() => setIsWithdrawalModalOpen(true)}
+              className="btn btn-outline"
+              style={{ flex: 1, padding: '0.75rem 1rem', borderRadius: '0.75rem', borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 700, fontSize: '0.875rem' }}
+            >
+              💸 Registrar Retiro
+            </button>
+          </div>
+        )}
 
         <WithdrawalModal 
           isOpen={isWithdrawalModalOpen} 

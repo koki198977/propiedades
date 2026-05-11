@@ -80,7 +80,7 @@ const featureValueStyle = {
 export default function PropertyDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { activeOrganization } = useOrganization();
+
   const [activeTab, setActiveTab] = useState<'detalle' | 'gestion'>(searchParams.get('manage') === 'true' ? 'gestion' : 'detalle');
   const [isAddingUtility, setIsAddingUtility] = useState(false);
   const [isEditingProperty, setIsEditingProperty] = useState(false);
@@ -108,8 +108,7 @@ export default function PropertyDetailsPage() {
   };
 
   // Roles verification
-  const isAdmin = activeOrganization?.role === OrganizationRole.ADMIN || (localStorage.getItem('user') && JSON.parse(localStorage.getItem('user')!).role === 'SUPER_ADMIN');
-  const canEdit = activeOrganization?.role !== OrganizationRole.VIEWER;
+  const { activeOrganization, canEdit, isAdmin } = useOrganization();
 
   // Queries
   const { data: property, isLoading: isLoadingProp } = useQuery<PropertyDto>({

@@ -15,8 +15,7 @@ import { OrganizationRole } from '@propiedades/types';
 import { useOrganization } from '../providers/OrganizationProvider';
 
 export default function DashboardPage() {
-  const { activeOrganization } = useOrganization();
-  const canEdit = activeOrganization?.role !== OrganizationRole.VIEWER;
+  const { activeOrganization, canEdit } = useOrganization();
   const { data, isLoading } = useQuery<any>({
     queryKey: ['dashboard-metrics', activeOrganization?.id],
     queryFn: async () => {

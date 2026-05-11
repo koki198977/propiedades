@@ -6,6 +6,8 @@ interface OrganizationContextType {
   organizations: OrganizationDto[];
   activeOrganization: OrganizationDto | null;
   isLoading: boolean;
+  canEdit: boolean;
+  isAdmin: boolean;
   setActiveOrganization: (orgId: string) => void;
   refreshOrganizations: () => Promise<void>;
 }
@@ -69,10 +71,24 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (org) {
       setActiveOrgState(org);
       localStorage.setItem('activeOrganizationId', org.id);
-      // We might want to reload page or state here to refresh all data
       window.location.reload(); 
     }
   };
+
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
+  const isGlobalAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
+
+  const canEdit = !!activeOrganization && (
+    activeOrganization.role === 'ADMIN' || 
+    activeOrganization.role === 'EDITOR' || 
+    isGlobalAdmin
+  );
+
+  const isAdmin = !!activeOrganization && (
+    activeOrganization.role === 'ADMIN' || 
+    isGlobalAdmin
+  );
 
   return (
     <OrganizationContext.Provider
@@ -80,6 +96,8 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         organizations,
         activeOrganization,
         isLoading,
+        canEdit,
+        isAdmin,
         setActiveOrganization,
         refreshOrganizations: fetchOrganizations,
       }}

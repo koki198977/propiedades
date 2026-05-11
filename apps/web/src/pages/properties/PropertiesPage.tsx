@@ -12,8 +12,7 @@ export default function PropertiesPage() {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
 
-  const { activeOrganization } = useOrganization();
-  const canEdit = activeOrganization?.role !== OrganizationRole.VIEWER;
+  const { activeOrganization, canEdit } = useOrganization();
 
   const { data: properties, isLoading, error } = useQuery<PropertyDto[]>({
     queryKey: ['properties'],

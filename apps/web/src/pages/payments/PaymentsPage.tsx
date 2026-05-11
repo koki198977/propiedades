@@ -8,8 +8,7 @@ import { formatDate } from '../../utils/dateUtils';
 
 export default function PaymentsPage() {
   const queryClient = useQueryClient();
-  const { activeOrganization } = useOrganization();
-  const canEdit = activeOrganization?.role !== OrganizationRole.VIEWER;
+  const { activeOrganization, canEdit } = useOrganization();
   
   // Estados para búsqueda y paginación
   const [searchTerm, setSearchTerm] = useState('');

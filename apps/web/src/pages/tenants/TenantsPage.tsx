@@ -7,8 +7,7 @@ import { useOrganization } from '../../providers/OrganizationProvider';
 import { useDebounce } from '../../hooks/useDebounce';
 
 export default function TenantsPage() {
-  const { activeOrganization, isLoading: isLoadingOrg } = useOrganization();
-  const canEdit = activeOrganization?.role !== OrganizationRole.VIEWER;
+  const { activeOrganization, isLoading: isLoadingOrg, canEdit } = useOrganization();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const debouncedSearch = useDebounce(searchTerm, 500);
