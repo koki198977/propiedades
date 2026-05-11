@@ -82,12 +82,14 @@ export class PropertyController {
   }
 
   @Post(':id/meters')
+  @RequireRole(OrganizationRole.ADMIN, OrganizationRole.EDITOR)
   @ApiOperation({ summary: 'Agregar un medidor a la propiedad' })
   async addMeter(@Param('id') id: string, @Body() dto: CreatePropertyMeterDto) {
     return this.propertyMeterService.create(id, dto);
   }
 
   @Delete(':id/meters/:meterId')
+  @RequireRole(OrganizationRole.ADMIN, OrganizationRole.EDITOR)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Eliminar un medidor' })
   async deleteMeter(@Param('meterId') meterId: string) {
@@ -96,6 +98,7 @@ export class PropertyController {
 
   // ── Photos ────────────────────────────────────────────────────────────
   @Post(':id/photos')
+  @RequireRole(OrganizationRole.ADMIN, OrganizationRole.EDITOR)
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Subir una foto a la propiedad' })
   async uploadPhoto(@Param('id') id: string, @UploadedFile() file: Express.Multer.File) {
@@ -110,6 +113,7 @@ export class PropertyController {
   }
 
   @Delete(':id/photos/:photoId')
+  @RequireRole(OrganizationRole.ADMIN, OrganizationRole.EDITOR)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Eliminar una foto de la propiedad' })
   async deletePhoto(@Param('id') id: string, @Param('photoId') photoId: string) {
@@ -133,6 +137,7 @@ export class PropertyController {
   }
 
   @Patch(':id/photos/order')
+  @RequireRole(OrganizationRole.ADMIN, OrganizationRole.EDITOR)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Actualizar el orden de las fotos de la propiedad' })
   async updatePhotosOrder(@Param('id') id: string, @Body() dto: ReorderPhotosDto) {

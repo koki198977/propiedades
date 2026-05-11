@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { UpdateProfileDto, UserProfileDto } from '@propiedades/types';
+import { UpdateProfileDto, UserProfileDto, OrganizationRole, OrganizationRoleLabels, UserRole } from '@propiedades/types';
 import toast from 'react-hot-toast';
 import api from '@/api/axios';
+import { useOrganization } from '../../providers/OrganizationProvider';
 
 export default function ProfilePage() {
   const queryClient = useQueryClient();
   const savedUser = JSON.parse(localStorage.getItem('user') || '{}') as UserProfileDto;
+  const { activeOrganization } = useOrganization();
   
   const [formData, setFormData] = useState({
     fullName: savedUser.fullName || '',
@@ -148,7 +150,9 @@ export default function ProfilePage() {
               {formData.fullName[0]?.toUpperCase() || '?'}
             </div>
             <h3 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.25rem' }}>{formData.fullName || 'Usuario'}</h3>
-            <p className="text-muted" style={{ marginBottom: '1.5rem' }}>{savedUser.role}</p>
+            <p className="text-muted" style={{ marginBottom: '1.5rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.875rem', fontWeight: 600 }}>
+              {activeOrganization?.role ? OrganizationRoleLabels[activeOrganization.role as OrganizationRole] : (savedUser.role === UserRole.ADMIN || savedUser.role === UserRole.SUPER_ADMIN ? 'Administrador' : 'Usuario')}
+            </p>
             
             <div className="badge badge-primary-light" style={{ fontSize: '0.75rem' }}>
               Miembro desde {new Date(savedUser.createdAt).toLocaleDateString('es-CL', { month: 'long', year: 'numeric' })}

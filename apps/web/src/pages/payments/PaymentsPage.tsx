@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { PaymentDto, PaymentMethodLabels } from '@propiedades/types';
+import { PaymentDto, PaymentMethodLabels, OrganizationRole } from '@propiedades/types';
 import { useOrganization } from '../../providers/OrganizationProvider';
 import api from '@/api/axios';
 import toast from 'react-hot-toast';
@@ -9,6 +9,7 @@ import { formatDate } from '../../utils/dateUtils';
 export default function PaymentsPage() {
   const queryClient = useQueryClient();
   const { activeOrganization } = useOrganization();
+  const canEdit = activeOrganization?.role !== OrganizationRole.VIEWER;
   
   // Estados para búsqueda y paginación
   const [searchTerm, setSearchTerm] = useState('');
@@ -104,18 +105,20 @@ export default function PaymentsPage() {
           <h2 className="font-heading" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>Historial de Pagos</h2>
           <p className="text-muted">Revisa todos los ingresos registrados en el sistema</p>
         </div>
-        <button 
-          onClick={handleEmitBilling}
-          className="btn btn-primary flex items-center gap-2"
-          disabled={billingMutation.isPending || !activeOrganization}
-        >
-          {billingMutation.isPending ? 'Enviando...' : (
-            <>
-              <span>📧</span>
-              Emitir Cobranza
-            </>
-          )}
-        </button>
+        {canEdit && (
+          <button 
+            onClick={handleEmitBilling}
+            className="btn btn-primary flex items-center gap-2"
+            disabled={billingMutation.isPending || !activeOrganization}
+          >
+            {billingMutation.isPending ? 'Enviando...' : (
+              <>
+                <span>📧</span>
+                Emitir Cobranza
+              </>
+            )}
+          </button>
+        )}
       </div>
 
       {error && (
@@ -160,7 +163,7 @@ export default function PaymentsPage() {
                   <th style={{ padding: '1rem 1.5rem', fontWeight: 600 }}>Método</th>
                   <th style={{ padding: '1rem 1.5rem', fontWeight: 600 }}>Monto</th>
                   <th style={{ padding: '1rem 1.5rem', fontWeight: 600 }}>Comprobante</th>
-                  <th style={{ padding: '1rem 1.5rem', fontWeight: 600, textAlign: 'right' }}>Acciones</th>
+                  {canEdit && <th style={{ padding: '1rem 1.5rem', fontWeight: 600, textAlign: 'right' }}>Acciones</th>}
                 </tr>
               </thead>
               <tbody>
@@ -191,17 +194,19 @@ export default function PaymentsPage() {
                         <span className="text-muted" style={{ fontSize: '0.7rem' }}>Sin comprobante</span>
                       )}
                     </td>
-                    <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
-                      <button 
-                        onClick={() => handleDelete(payment.id)}
-                        style={{ background: 'none', border: 'none', color: '#e74c3c', cursor: 'pointer', padding: '0.5rem', fontSize: '1.1rem', opacity: 0.7 }}
-                        onMouseOver={e => e.currentTarget.style.opacity = '1'}
-                        onMouseOut={e => e.currentTarget.style.opacity = '0.7'}
-                        title="Eliminar pago"
-                      >
-                        🗑
-                      </button>
-                    </td>
+                    {canEdit && (
+                      <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
+                        <button 
+                          onClick={() => handleDelete(payment.id)}
+                          style={{ background: 'none', border: 'none', color: '#e74c3c', cursor: 'pointer', padding: '0.5rem', fontSize: '1.1rem', opacity: 0.7 }}
+                          onMouseOver={e => e.currentTarget.style.opacity = '1'}
+                          onMouseOut={e => e.currentTarget.style.opacity = '0.7'}
+                          title="Eliminar pago"
+                        >
+                          🗑
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

@@ -21,11 +21,13 @@ import ShowcasePage from './pages/public/ShowcasePage';
 import PublicPropertyDetailPage from './pages/public/PublicPropertyDetailPage';
 import OrganizationSwitcher from './components/OrganizationSwitcher';
 import GodModePage from './pages/admin/GodModePage';
-import { UserRole } from '@propiedades/types';
+import { UserRole, OrganizationRole, OrganizationRoleLabels } from '@propiedades/types';
+import { useOrganization } from './providers/OrganizationProvider';
 
 function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<UserProfileDto | null>(null);
+  const { activeOrganization } = useOrganization();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -130,7 +132,9 @@ function App() {
                     </div>
                     <div className="flex flex-col">
                       <span style={{ fontWeight: 700, fontSize: '0.85rem', lineHeight: 1 }}>{user.fullName.split(' ')[0]}</span>
-                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Administrador</span>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                        {activeOrganization?.role ? OrganizationRoleLabels[activeOrganization.role as OrganizationRole] : 'Usuario'}
+                      </span>
                     </div>
                   </Link>
                 </div>
@@ -158,7 +162,9 @@ function App() {
                 </div>
                 <div>
                   <div style={{ fontWeight: 800, fontSize: '0.9rem' }}>{user.fullName}</div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Administrador</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                    {activeOrganization?.role ? OrganizationRoleLabels[activeOrganization.role as OrganizationRole] : 'Usuario'}
+                  </div>
                 </div>
               </Link>
               <button onClick={() => setIsMobileMenuOpen(false)} style={{ background: 'var(--surface-50)', border: 'none', width: '32px', height: '32px', borderRadius: '8px', cursor: 'pointer', color: 'var(--text-muted)' }}>

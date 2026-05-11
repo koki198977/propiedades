@@ -11,10 +11,12 @@ import {
 import api from '@/api/axios';
 import { Link } from 'react-router-dom';
 
+import { OrganizationRole } from '@propiedades/types';
 import { useOrganization } from '../providers/OrganizationProvider';
 
 export default function DashboardPage() {
   const { activeOrganization } = useOrganization();
+  const canEdit = activeOrganization?.role !== OrganizationRole.VIEWER;
   const { data, isLoading } = useQuery<any>({
     queryKey: ['dashboard-metrics', activeOrganization?.id],
     queryFn: async () => {
@@ -60,8 +62,12 @@ export default function DashboardPage() {
           <p className="text-muted" style={{ fontSize: '1rem' }}>Visión analítica de tu portafolio inmobiliario</p>
         </div>
         <div className="hide-on-mobile flex gap-3">
-           <Link to="/finances" className="btn btn-outline" style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}>💸 Retiro de Dinero</Link>
-           <Link to="/properties/new" className="btn btn-primary">+ Nueva Propiedad</Link>
+          {canEdit && (
+            <>
+              <Link to="/finances" className="btn btn-outline" style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}>💸 Retiro de Dinero</Link>
+              <Link to="/properties/new" className="btn btn-primary">+ Nueva Propiedad</Link>
+            </>
+          )}
         </div>
       </div>
 

@@ -109,6 +109,7 @@ export default function PropertyDetailsPage() {
 
   // Roles verification
   const isAdmin = activeOrganization?.role === OrganizationRole.ADMIN || (localStorage.getItem('user') && JSON.parse(localStorage.getItem('user')!).role === 'SUPER_ADMIN');
+  const canEdit = activeOrganization?.role !== OrganizationRole.VIEWER;
 
   // Queries
   const { data: property, isLoading: isLoadingProp } = useQuery<PropertyDto>({
@@ -341,12 +342,14 @@ export default function PropertyDetailsPage() {
                   </>
                 )}
               </div>
-              <button 
-                onClick={() => setIsEditingProperty(!isEditingProperty)} 
-                className={isEditingProperty ? 'btn btn-outline' : 'btn btn-primary'}
-              >
-                {isEditingProperty ? 'Cancelar' : '✏️ Editar Información'}
-              </button>
+              {canEdit && (
+                <button 
+                  onClick={() => setIsEditingProperty(!isEditingProperty)} 
+                  className={isEditingProperty ? 'btn btn-outline' : 'btn btn-primary'}
+                >
+                  {isEditingProperty ? 'Cancelar' : '✏️ Editar Información'}
+                </button>
+              )}
             </div>
 
             {isEditingProperty ? (
@@ -503,13 +506,15 @@ export default function PropertyDetailsPage() {
                           </div>
                         </div>
 
-                        <button 
-                          className="btn btn-primary" 
-                          style={{ width: '100%', padding: '0.6rem', fontSize: '0.75rem', backgroundColor: isOverdue ? '#ef4444' : '#f59e0b', border: 'none', fontWeight: 700 }}
-                          onClick={() => setReturnDepositTenancy(tenancy)}
-                        >
-                          Marcar como DEVUELTA
-                        </button>
+                        {canEdit && (
+                          <button 
+                            className="btn btn-primary" 
+                            style={{ width: '100%', padding: '0.6rem', fontSize: '0.75rem', backgroundColor: isOverdue ? '#ef4444' : '#f59e0b', border: 'none', fontWeight: 700 }}
+                            onClick={() => setReturnDepositTenancy(tenancy)}
+                          >
+                            Marcar como DEVUELTA
+                          </button>
+                        )}
                       </div>
                     );
                   })}
@@ -531,13 +536,15 @@ export default function PropertyDetailsPage() {
             <div className="card">
               <div className="flex justify-between items-center" style={{ marginBottom: '2rem' }}>
                 <h3 className="font-heading" style={{ fontSize: '1.5rem' }}>Servicios y Gastos</h3>
-                <button 
-                  onClick={() => setIsAddingUtility(!isAddingUtility)} 
-                  className={isAddingUtility ? 'btn btn-outline' : 'btn btn-primary'} 
-                  style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
-                >
-                  {isAddingUtility ? 'Cerrar' : '+ Registrar Gasto'}
-                </button>
+                {canEdit && (
+                  <button 
+                    onClick={() => setIsAddingUtility(!isAddingUtility)} 
+                    className={isAddingUtility ? 'btn btn-outline' : 'btn btn-primary'} 
+                    style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
+                  >
+                    {isAddingUtility ? 'Cerrar' : '+ Registrar Gasto'}
+                  </button>
+                )}
               </div>
 
               {isAddingUtility && (
@@ -618,19 +625,21 @@ export default function PropertyDetailsPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <div style={{ fontWeight: 600 }}>{activeTenancy.tenant.name}</div>
-                        <button 
-                          onClick={() => setIsChangeTenantOpen(true)}
-                          style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.65rem', fontWeight: 800, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
-                        >
-                          CAMBIAR
-                        </button>
+                        {canEdit && (
+                          <button 
+                            onClick={() => setIsChangeTenantOpen(true)}
+                            style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.65rem', fontWeight: 800, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+                          >
+                            CAMBIAR
+                          </button>
+                        )}
                         <ChangeTenantModal 
                           isOpen={isChangeTenantOpen}
                           onClose={() => setIsChangeTenantOpen(false)}
                           propertyId={property.id}
                           tenancyId={activeTenancy.id}
                         />
-                        {activeTenancy.tenant.email && (
+                        {activeTenancy.tenant.email && canEdit && (
                           <button 
                             onClick={() => {
                               if (window.confirm(`¿Enviar correo de cobranza a ${activeTenancy.tenant.name}?`)) {
@@ -647,34 +656,38 @@ export default function PropertyDetailsPage() {
                       </div>
                       <div className="text-muted" style={{ fontSize: '0.75rem' }}>{activeTenancy.tenant.email || 'Sin email'}</div>
                     </div>
-                    <div style={{ marginLeft: 'auto' }}>
-                      <button 
-                        className="btn btn-outline" 
-                        style={{ fontSize: '0.65rem', padding: '0.3rem 0.6rem', color: 'var(--danger)', borderColor: 'var(--danger)', opacity: 0.8 }}
-                        onClick={() => setIsTerminateModalOpen(true)}
-                      >
-                        ⚠️ Terminar Contrato
-                      </button>
-                      
-                      <TerminateTenancyModal 
-                        isOpen={isTerminateModalOpen}
-                        onClose={() => setIsTerminateModalOpen(false)}
-                        propertyId={property.id}
-                        tenancyId={activeTenancy.id}
-                      />
-                    </div>
+                    {canEdit && (
+                      <div style={{ marginLeft: 'auto' }}>
+                        <button 
+                          className="btn btn-outline" 
+                          style={{ fontSize: '0.65rem', padding: '0.3rem 0.6rem', color: 'var(--danger)', borderColor: 'var(--danger)', opacity: 0.8 }}
+                          onClick={() => setIsTerminateModalOpen(true)}
+                        >
+                          ⚠️ Terminar Contrato
+                        </button>
+                        
+                        <TerminateTenancyModal 
+                          isOpen={isTerminateModalOpen}
+                          onClose={() => setIsTerminateModalOpen(false)}
+                          propertyId={property.id}
+                          tenancyId={activeTenancy.id}
+                        />
+                      </div>
+                    )}
                   </div>
                   
                   <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
                     <div style={{ backgroundColor: 'white', padding: '1.25rem', borderRadius: '0.75rem', border: '1px solid var(--border-light)' }}>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', justifyContent: 'space-between' }}>
                         <span>Canon de Arriendo</span>
-                        <button 
-                          onClick={() => setIsEditRentOpen(true)}
-                          style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.65rem', fontWeight: 800, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
-                        >
-                          EDITAR
-                        </button>
+                        {canEdit && (
+                          <button 
+                            onClick={() => setIsEditRentOpen(true)}
+                            style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.65rem', fontWeight: 800, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+                          >
+                            EDITAR
+                          </button>
+                        )}
                       </div>
                       <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)' }}>
                         ${Number(activeTenancy.monthlyRent).toLocaleString('es-CL')}
@@ -684,7 +697,7 @@ export default function PropertyDetailsPage() {
                     <div style={{ backgroundColor: 'white', padding: '1.25rem', borderRadius: '0.75rem', border: '1px solid var(--border-light)', position: 'relative' }}>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', justifyContent: 'space-between' }}>
                         <span>Mes de Garantía</span>
-                        {!activeTenancy.isSecurityDepositReturned && (
+                        {!activeTenancy.isSecurityDepositReturned && canEdit && (
                           <button 
                             onClick={() => setIsEditDepositOpen(true)}
                             style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.65rem', fontWeight: 800, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
@@ -748,12 +761,14 @@ export default function PropertyDetailsPage() {
                       <div>
                         <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span>INICIO</span>
-                          <button 
-                            onClick={() => setIsEditStartDateOpen(true)}
-                            style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.6rem', fontWeight: 800, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
-                          >
-                            EDITAR
-                          </button>
+                          {canEdit && (
+                            <button 
+                              onClick={() => setIsEditStartDateOpen(true)}
+                              style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.6rem', fontWeight: 800, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+                            >
+                              EDITAR
+                            </button>
+                          )}
                         </div>
                         <div style={{ fontWeight: 800 }}>{formatDate(activeTenancy.startDate)}</div>
                       </div>
@@ -764,9 +779,11 @@ export default function PropertyDetailsPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-2">
-                    <RegisterPaymentForm tenancyId={activeTenancy.id} />
-                  </div>
+                  {canEdit && (
+                    <div className="flex flex-col gap-2">
+                      <RegisterPaymentForm tenancyId={activeTenancy.id} />
+                    </div>
+                  )}
                   
                   <RecentPaymentsCard propertyId={property.id} />
                 </div>
@@ -774,18 +791,22 @@ export default function PropertyDetailsPage() {
                 <div style={{ textAlign: 'center', padding: '1rem' }}>
                   <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>👤</div>
                   <p className="text-muted" style={{ marginBottom: '1.5rem', fontSize: '0.875rem' }}>Propiedad desocupada.</p>
-                  <button 
-                    onClick={() => setIsAssigningTenant(!isAssigningTenant)} 
-                    className={isAssigningTenant ? 'btn btn-outline' : 'btn btn-primary'} 
-                    style={{ width: '100%', padding: '0.75rem' }}
-                  >
-                    {isAssigningTenant ? 'Cancelar' : 'Asignar Inquilino'}
-                  </button>
-                  
-                  {isAssigningTenant && (
-                    <div style={{ marginTop: '1.5rem', textAlign: 'left', padding: '1.25rem', backgroundColor: 'white', borderRadius: '0.75rem', border: '1px solid var(--border)' }}>
-                      <AssignTenantForm propertyId={property.id} expectedRent={property.expectedRent} onDone={() => setIsAssigningTenant(false)} />
-                    </div>
+                  {canEdit && (
+                    <>
+                      <button 
+                        onClick={() => setIsAssigningTenant(!isAssigningTenant)} 
+                        className={isAssigningTenant ? 'btn btn-outline' : 'btn btn-primary'} 
+                        style={{ width: '100%', padding: '0.75rem' }}
+                      >
+                        {isAssigningTenant ? 'Cancelar' : 'Asignar Inquilino'}
+                      </button>
+                      
+                      {isAssigningTenant && (
+                        <div style={{ marginTop: '1.5rem', textAlign: 'left', padding: '1.25rem', backgroundColor: 'white', borderRadius: '0.75rem', border: '1px solid var(--border)' }}>
+                          <AssignTenantForm propertyId={property.id} expectedRent={property.expectedRent} onDone={() => setIsAssigningTenant(false)} />
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}
@@ -813,61 +834,67 @@ export default function PropertyDetailsPage() {
                     <img src={photo.url} alt={`Propiedad ${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     
                     {/* Delete Button */}
-                    <button 
-                      onClick={() => {
-                        if (window.confirm('¿Eliminar esta foto?')) {
-                          deletePhotoMutation.mutate(photo.id);
-                        }
-                      }}
-                      style={{ position: 'absolute', top: '4px', right: '4px', width: '20px', height: '20px', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.6)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', fontSize: '10px' }}
-                    >
-                      ✕
-                    </button>
+                    {canEdit && (
+                      <button 
+                        onClick={() => {
+                          if (window.confirm('¿Eliminar esta foto?')) {
+                            deletePhotoMutation.mutate(photo.id);
+                          }
+                        }}
+                        style={{ position: 'absolute', top: '4px', right: '4px', width: '20px', height: '20px', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.6)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', fontSize: '10px' }}
+                      >
+                        ✕
+                      </button>
+                    )}
 
                     {/* Ordering Arrows */}
-                    <div style={{ position: 'absolute', bottom: '4px', left: '0', userSelect: 'none', right: '0', display: 'flex', justifyContent: 'space-between', padding: '0 4px' }}>
-                      {i > 0 ? (
-                        <button 
-                          onClick={() => handleMovePhoto(i, 'left')}
-                          style={{ width: '24px', height: '24px', borderRadius: '0.25rem', backgroundColor: 'rgba(0,0,0,0.5)', color: 'white', display: 'grid', placeItems: 'center', border: 'none', cursor: 'pointer', fontSize: '12px' }}
-                        >
-                          ❮
-                        </button>
-                      ) : <div />}
-                      
-                      {i < (property.photos?.length || 0) - 1 ? (
-                        <button 
-                          onClick={() => handleMovePhoto(i, 'right')}
-                          style={{ width: '24px', height: '24px', borderRadius: '0.25rem', backgroundColor: 'rgba(0,0,0,0.5)', color: 'white', display: 'grid', placeItems: 'center', border: 'none', cursor: 'pointer', fontSize: '12px' }}
-                        >
-                          ❯
-                        </button>
-                      ) : <div />}
-                    </div>
+                    {canEdit && (
+                      <div style={{ position: 'absolute', bottom: '4px', left: '0', userSelect: 'none', right: '0', display: 'flex', justifyContent: 'space-between', padding: '0 4px' }}>
+                        {i > 0 ? (
+                          <button 
+                            onClick={() => handleMovePhoto(i, 'left')}
+                            style={{ width: '24px', height: '24px', borderRadius: '0.25rem', backgroundColor: 'rgba(0,0,0,0.5)', color: 'white', display: 'grid', placeItems: 'center', border: 'none', cursor: 'pointer', fontSize: '12px' }}
+                          >
+                            ❮
+                          </button>
+                        ) : <div />}
+                        
+                        {i < (property.photos?.length || 0) - 1 ? (
+                          <button 
+                            onClick={() => handleMovePhoto(i, 'right')}
+                            style={{ width: '24px', height: '24px', borderRadius: '0.25rem', backgroundColor: 'rgba(0,0,0,0.5)', color: 'white', display: 'grid', placeItems: 'center', border: 'none', cursor: 'pointer', fontSize: '12px' }}
+                          >
+                            ❯
+                          </button>
+                        ) : <div />}
+                      </div>
+                    )}
                   </div>
                 ))}
                 
-                <div 
-                  onClick={() => {
-                    if (fileInputRef.current) fileInputRef.current.click();
-                  }}
-                  style={{ 
-                    aspectRatio: '1/1', 
-                    backgroundColor: 'var(--bg-surface)', 
-                    borderRadius: '0.5rem', 
-                    display: 'grid', 
-                    placeItems: 'center', 
-                    cursor: uploadPhotoMutation.isPending ? 'wait' : 'pointer', 
-                    border: '2px dashed var(--border)',
-                    opacity: uploadPhotoMutation.isPending ? 0.5 : 1
-                  }}
-                >
-                  {uploadPhotoMutation.isPending ? (
-                    <div className="skeleton" style={{ width: '20px', height: '20px', borderRadius: '50%' }}></div>
-                  ) : (
-                    <span style={{ fontSize: '1.5rem', color: 'var(--text-muted)' }}>+</span>
-                  )}
-                </div>
+                {canEdit && (
+                  <div 
+                    onClick={() => {
+                      if (fileInputRef.current) fileInputRef.current.click();
+                    }}
+                    style={{ 
+                      aspectRatio: '1/1', 
+                      backgroundColor: 'var(--bg-surface)', 
+                      borderRadius: '0.5rem', 
+                      display: 'grid', 
+                      placeItems: 'center', 
+                      cursor: uploadPhotoMutation.isPending ? 'wait' : 'pointer', 
+                      border: '2px dashed var(--border)',
+                      opacity: uploadPhotoMutation.isPending ? 0.5 : 1
+                    }}
+                  >
+                    {uploadPhotoMutation.isPending ? (
+                      <div className="skeleton" style={{ width: '20px', height: '20px', borderRadius: '50%' }}></div>
+                    ) : (
+                      <span style={{ fontSize: '1.5rem', color: 'var(--text-muted)' }}>+</span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1844,6 +1871,8 @@ function RecentPaymentsCard({ propertyId }: { propertyId: string }) {
 function RemindersCard({ propertyId }: { propertyId: string }) {
   const queryClient = useQueryClient();
   const [showAll, setShowAll] = useState(false);
+  const { activeOrganization } = useOrganization();
+  const canEdit = activeOrganization?.role !== OrganizationRole.VIEWER;
 
   const { data: reminders = [], isLoading } = useQuery<ExpenseReminderDto[]>({
     queryKey: ['reminders', propertyId],
@@ -1918,7 +1947,7 @@ function RemindersCard({ propertyId }: { propertyId: string }) {
           {overdue.length > 0 && (
             <div className="flex flex-col gap-2">
               <span style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Vencidos</span>
-              {overdue.map(r => <ReminderItem key={r.id} r={r} onPay={payReminder} onDelete={deleteReminder} isPaying={isPaying} />)}
+              {overdue.map(r => <ReminderItem key={r.id} r={r} onPay={payReminder} onDelete={deleteReminder} isPaying={isPaying} canEdit={canEdit} />)}
             </div>
           )}
 
@@ -1928,7 +1957,7 @@ function RemindersCard({ propertyId }: { propertyId: string }) {
               <span style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {showAll ? 'Todos los recordatorios' : 'Próximos (7 días)'}
               </span>
-              {upcoming.map(r => <ReminderItem key={r.id} r={r} onPay={payReminder} onDelete={deleteReminder} isPaying={isPaying} />)}
+              {upcoming.map(r => <ReminderItem key={r.id} r={r} onPay={payReminder} onDelete={deleteReminder} isPaying={isPaying} canEdit={canEdit} />)}
             </div>
           )}
         </div>
@@ -1937,7 +1966,7 @@ function RemindersCard({ propertyId }: { propertyId: string }) {
   );
 }
 
-function ReminderItem({ r, onPay, onDelete, isPaying }: { r: ExpenseReminderDto, onPay: (id: string) => void, onDelete: (id: string) => void, isPaying: boolean }) {
+function ReminderItem({ r, onPay, onDelete, isPaying, canEdit }: { r: ExpenseReminderDto, onPay: (id: string) => void, onDelete: (id: string) => void, isPaying: boolean, canEdit: boolean }) {
   const dueDate = new Date(r.nextDueDate);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -1971,23 +2000,25 @@ function ReminderItem({ r, onPay, onDelete, isPaying }: { r: ExpenseReminderDto,
         </div>
       </div>
 
-      <div className="flex gap-2" style={{ marginTop: '0.5rem' }}>
-        <button 
-          disabled={isPaying}
-          onClick={() => onPay(r.id)}
-          className="btn btn-primary" 
-          style={{ flex: 1, padding: '0.55rem', fontSize: '0.75rem', fontWeight: 700 }}
-        >
-          Marcar como Pagado
-        </button>
-        <button 
-          onClick={() => { if(window.confirm('¿Eliminar recordatorio?')) onDelete(r.id); }}
-          className="btn btn-outline" 
-          style={{ padding: '0.5rem 0.75rem', fontSize: '0.75rem', color: 'var(--danger)' }}
-        >
-          🗑
-        </button>
-      </div>
+      {canEdit && (
+        <div className="flex gap-2" style={{ marginTop: '0.5rem' }}>
+          <button 
+            disabled={isPaying}
+            onClick={() => onPay(r.id)}
+            className="btn btn-primary" 
+            style={{ flex: 1, padding: '0.55rem', fontSize: '0.75rem', fontWeight: 700 }}
+          >
+            Marcar como Pagado
+          </button>
+          <button 
+            onClick={() => { if(window.confirm('¿Eliminar recordatorio?')) onDelete(r.id); }}
+            className="btn btn-outline" 
+            style={{ padding: '0.5rem 0.75rem', fontSize: '0.75rem', color: 'var(--danger)' }}
+          >
+            🗑
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -1998,6 +2029,8 @@ function MetersCard({ propertyId }: { propertyId: string }) {
   const [isAdding, setIsAdding] = useState(false);
   const [label, setLabel] = useState('');
   const [number, setNumber] = useState('');
+  const { activeOrganization } = useOrganization();
+  const canEdit = activeOrganization?.role !== OrganizationRole.VIEWER;
 
   const SUGGESTIONS = ['Luz', 'Agua', 'Gas', 'Calefacción', 'Internet', 'Ascensor', 'Otro'];
 
@@ -2053,13 +2086,15 @@ function MetersCard({ propertyId }: { propertyId: string }) {
     <div className="card">
       <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem' }}>
         <h3 className="font-heading" style={{ fontSize: '1.5rem' }}>Medidores</h3>
-        <button
-          onClick={() => setIsAdding(!isAdding)}
-          className={isAdding ? 'btn btn-outline' : 'btn btn-primary'}
-          style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
-        >
-          {isAdding ? 'Cerrar' : '+ Agregar'}
-        </button>
+        {canEdit && (
+          <button
+            onClick={() => setIsAdding(!isAdding)}
+            className={isAdding ? 'btn btn-outline' : 'btn btn-primary'}
+            style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
+          >
+            {isAdding ? 'Cerrar' : '+ Agregar'}
+          </button>
+        )}
       </div>
 
       {/* Add form */}
@@ -2116,13 +2151,15 @@ function MetersCard({ propertyId }: { propertyId: string }) {
                 <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{meter.label}</div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>Nro. {meter.number}</div>
               </div>
-              <button
-                onClick={() => deleteMeter(meter.id)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', fontSize: '1rem', padding: '0.25rem 0.5rem', borderRadius: '0.4rem' }}
-                title="Eliminar medidor"
-              >
-                🗑
-              </button>
+              {canEdit && (
+                <button
+                  onClick={() => deleteMeter(meter.id)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', fontSize: '1rem', padding: '0.25rem 0.5rem', borderRadius: '0.4rem' }}
+                  title="Eliminar medidor"
+                >
+                  🗑
+                </button>
+              )}
             </div>
           ))}
         </div>

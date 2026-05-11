@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams, Link } from 'react-router-dom';
-import { TenantDto, PaginatedResponse } from '@propiedades/types';
+import { TenantDto, PaginatedResponse, OrganizationRole } from '@propiedades/types';
 import api from '@/api/axios';
 import { useOrganization } from '../../providers/OrganizationProvider';
 import { useDebounce } from '../../hooks/useDebounce';
 
 export default function TenantsPage() {
   const { activeOrganization, isLoading: isLoadingOrg } = useOrganization();
+  const canEdit = activeOrganization?.role !== OrganizationRole.VIEWER;
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const debouncedSearch = useDebounce(searchTerm, 500);
@@ -52,9 +53,11 @@ export default function TenantsPage() {
           <h1 className="font-heading" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>Arrendatarios</h1>
           <p className="text-muted">Gestiona la base de datos de clientes y sus contratos activos.</p>
         </div>
-        <Link to="/tenants/new" className="btn btn-primary" style={{ padding: '0.75rem 1.5rem' }}>
-          <span>+</span> Nuevo Arrendatario
-        </Link>
+        {canEdit && (
+          <Link to="/tenants/new" className="btn btn-primary" style={{ padding: '0.75rem 1.5rem' }}>
+            <span>+</span> Nuevo Arrendatario
+          </Link>
+        )}
       </div>
 
       <div className="card" style={{ padding: '1rem', border: '1.5px solid var(--border)' }}>
@@ -190,7 +193,7 @@ export default function TenantsPage() {
               ? `No encontramos coincidencias para "${debouncedSearch}". Intenta con otros términos.`
               : 'Empieza registrando a tu primer cliente para gestionar sus cobros y contratos.'}
           </p>
-          {!debouncedSearch && (
+          {!debouncedSearch && canEdit && (
             <Link to="/tenants/new" className="btn btn-primary">
               + Registrar Arrendatario
             </Link>

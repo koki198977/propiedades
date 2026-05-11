@@ -7,6 +7,7 @@ import api from '@/api/axios';
 
 export default function TeamSettingsPage() {
   const { activeOrganization, refreshOrganizations } = useOrganization();
+  const isAdmin = activeOrganization?.role === OrganizationRole.ADMIN;
   const queryClient = useQueryClient();
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<OrganizationRole>(OrganizationRole.VIEWER);
@@ -139,7 +140,7 @@ export default function TeamSettingsPage() {
                     <th style={{ padding: '1rem', fontWeight: 600 }}>Nombre</th>
                     <th style={{ padding: '1rem', fontWeight: 600 }}>Email</th>
                     <th style={{ padding: '1rem', fontWeight: 600 }}>Rol</th>
-                    <th style={{ padding: '1rem', fontWeight: 600, textAlign: 'right' }}>Acciones</th>
+                    {isAdmin && <th style={{ padding: '1rem', fontWeight: 600, textAlign: 'right' }}>Acciones</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -152,20 +153,22 @@ export default function TeamSettingsPage() {
                           {m.role}
                         </span>
                       </td>
-                      <td style={{ padding: '1rem', textAlign: 'right' }}>
-                        <button 
-                          className="btn btn-outline" 
-                          style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', color: 'var(--danger)' }}
-                          onClick={() => {
-                            if (window.confirm('¿Estás seguro de revocar el acceso a este usuario?')) {
-                              removeMutation.mutate(m.userId);
-                            }
-                          }}
-                          disabled={removeMutation.isPending}
-                        >
-                          Revocar
-                        </button>
-                      </td>
+                      {isAdmin && (
+                        <td style={{ padding: '1rem', textAlign: 'right' }}>
+                          <button 
+                            className="btn btn-outline" 
+                            style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', color: 'var(--danger)' }}
+                            onClick={() => {
+                              if (window.confirm('¿Estás seguro de revocar el acceso a este usuario?')) {
+                                removeMutation.mutate(m.userId);
+                              }
+                            }}
+                            disabled={removeMutation.isPending}
+                          >
+                            Revocar
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -180,14 +183,16 @@ export default function TeamSettingsPage() {
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Datos de Cobranza</h3>
                 <p className="text-muted" style={{ fontSize: '0.85rem' }}>Estos datos aparecerán en los correos de cobro enviados a los inquilinos.</p>
               </div>
-              <button 
-                form="bank-form"
-                type="submit" 
-                className="btn btn-primary" 
-                disabled={updateOrgMutation.isPending}
-              >
-                {updateOrgMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
-              </button>
+              {isAdmin && (
+                <button 
+                  form="bank-form"
+                  type="submit" 
+                  className="btn btn-primary" 
+                  disabled={updateOrgMutation.isPending}
+                >
+                  {updateOrgMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
+                </button>
+              )}
             </div>
             
             <form id="bank-form" onSubmit={handleUpdateBank} className="grid grid-cols-2 gap-6">
@@ -199,6 +204,7 @@ export default function TeamSettingsPage() {
                   placeholder="Ej: Banco Estado" 
                   value={bankData.bankName}
                   onChange={e => setBankData({...bankData, bankName: e.target.value})}
+                  disabled={!isAdmin}
                 />
               </div>
               <div className="flex flex-col gap-1">
@@ -209,6 +215,7 @@ export default function TeamSettingsPage() {
                   placeholder="Ej: Cuenta Corriente / Vista" 
                   value={bankData.bankAccountType}
                   onChange={e => setBankData({...bankData, bankAccountType: e.target.value})}
+                  disabled={!isAdmin}
                 />
               </div>
               <div className="flex flex-col gap-1">
@@ -219,6 +226,7 @@ export default function TeamSettingsPage() {
                   placeholder="00000000" 
                   value={bankData.bankAccountNumber}
                   onChange={e => setBankData({...bankData, bankAccountNumber: e.target.value})}
+                  disabled={!isAdmin}
                 />
               </div>
               <div className="flex flex-col gap-1">
@@ -229,6 +237,7 @@ export default function TeamSettingsPage() {
                   placeholder="12.345.678-9" 
                   value={bankData.bankAccountRut}
                   onChange={e => setBankData({...bankData, bankAccountRut: e.target.value})}
+                  disabled={!isAdmin}
                 />
               </div>
               <div className="flex flex-col gap-1 col-span-2">
@@ -239,6 +248,7 @@ export default function TeamSettingsPage() {
                   placeholder="pagos@tuempresa.com" 
                   value={bankData.bankAccountEmail}
                   onChange={e => setBankData({...bankData, bankAccountEmail: e.target.value})}
+                  disabled={!isAdmin}
                 />
                 <p className="text-muted" style={{ fontSize: '0.75rem' }}>Se le pedirá al inquilino que envíe el comprobante a esta dirección.</p>
               </div>
@@ -248,36 +258,38 @@ export default function TeamSettingsPage() {
 
         {/* RIGHT COLUMN: INVITE */}
         <div className="flex flex-col gap-6">
-          <div className="card glass">
-            <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', fontWeight: 600 }}>Invitar Colaborador</h3>
-            <p className="text-muted" style={{ fontSize: '0.85rem', marginBottom: '1.5rem' }}>
-              El usuario debe estar registrado previamente en la plataforma para poder ser agregado a este espacio.
-            </p>
-            <form onSubmit={handleInvite} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1">
-                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Email Registrado</label>
-                <input 
-                  type="email" 
-                  className="input" 
-                  placeholder="colaborador@correo.com" 
-                  required 
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Rol de Acceso</label>
-                <select className="input" value={role} onChange={e => setRole(e.target.value as OrganizationRole)}>
-                  <option value={OrganizationRole.VIEWER}>VIEWER (Solo Lectura)</option>
-                  <option value={OrganizationRole.EDITOR}>EDITOR (Escritura Básica)</option>
-                  <option value={OrganizationRole.ADMIN}>ADMIN (Total)</option>
-                </select>
-              </div>
-              <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem' }} disabled={inviteMutation.isPending}>
-                {inviteMutation.isPending ? 'Enviando...' : 'Otorgar Acceso'}
-              </button>
-            </form>
-          </div>
+          {isAdmin && (
+            <div className="card glass">
+              <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', fontWeight: 600 }}>Invitar Colaborador</h3>
+              <p className="text-muted" style={{ fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+                El usuario debe estar registrado previamente en la plataforma para poder ser agregado a este espacio.
+              </p>
+              <form onSubmit={handleInvite} className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1">
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Email Registrado</label>
+                  <input 
+                    type="email" 
+                    className="input" 
+                    placeholder="colaborador@correo.com" 
+                    required 
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Rol de Acceso</label>
+                  <select className="input" value={role} onChange={e => setRole(e.target.value as OrganizationRole)}>
+                    <option value={OrganizationRole.VIEWER}>VIEWER (Solo Lectura)</option>
+                    <option value={OrganizationRole.EDITOR}>EDITOR (Escritura Básica)</option>
+                    <option value={OrganizationRole.ADMIN}>ADMIN (Total)</option>
+                  </select>
+                </div>
+                <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem' }} disabled={inviteMutation.isPending}>
+                  {inviteMutation.isPending ? 'Enviando...' : 'Otorgar Acceso'}
+                </button>
+              </form>
+            </div>
+          )}
         </div>
       </div>
     </div>

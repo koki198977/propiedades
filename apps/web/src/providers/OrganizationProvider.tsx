@@ -36,9 +36,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           localStorage.setItem('activeOrganizationId', orgs[0].id);
         }
       } else if (orgs.length > 0) {
-        // First selection
-        setActiveOrgState(orgs[0]);
-        localStorage.setItem('activeOrganizationId', orgs[0].id);
+        // First selection: Prefer an organization that is NOT the default "Mi Propiedad"
+        const defaultOrg = orgs.find((o: OrganizationDto) => o.name !== 'Mi Propiedad') || orgs[0];
+        setActiveOrgState(defaultOrg);
+        localStorage.setItem('activeOrganizationId', defaultOrg.id);
       } else {
         setActiveOrgState(null);
         localStorage.removeItem('activeOrganizationId');

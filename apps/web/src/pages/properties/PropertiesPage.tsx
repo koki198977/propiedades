@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { PropertyDto, PropertyCategoryLabels, PropertyCategory } from '@propiedades/types';
+import { PropertyDto, PropertyCategoryLabels, PropertyCategory, OrganizationRole } from '@propiedades/types';
+import { useOrganization } from '../../providers/OrganizationProvider';
 import api from '@/api/axios';
 import toast from 'react-hot-toast';
 
@@ -10,6 +11,9 @@ const PAGE_SIZE = 9;
 export default function PropertiesPage() {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
+
+  const { activeOrganization } = useOrganization();
+  const canEdit = activeOrganization?.role !== OrganizationRole.VIEWER;
 
   const { data: properties, isLoading, error } = useQuery<PropertyDto[]>({
     queryKey: ['properties'],
@@ -74,9 +78,11 @@ export default function PropertiesPage() {
             <span>🔗</span> Compartir Vitrina
           </button>
           
-          <Link to="/properties/new" className="btn btn-primary" style={{ padding: '0.75rem 1.5rem' }}>
-            <span>+</span> Agregar Propiedad
-          </Link>
+          {canEdit && (
+            <Link to="/properties/new" className="btn btn-primary" style={{ padding: '0.75rem 1.5rem' }}>
+              <span>+</span> Agregar Propiedad
+            </Link>
+          )}
         </div>
       </div>
 
@@ -91,7 +97,7 @@ export default function PropertiesPage() {
           <div style={{ fontSize: '4rem', marginBottom: '1.5rem' }}>🏘️</div>
           <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>No tienes propiedades registradas</h3>
           <p className="text-muted" style={{ marginBottom: '2rem' }}>Comienza agregando tu primera casa, departamento o local comercial.</p>
-          <Link to="/properties/new" className="btn btn-primary">Registrar mi primera propiedad</Link>
+          {canEdit && <Link to="/properties/new" className="btn btn-primary">Registrar mi primera propiedad</Link>}
         </div>
       ) : (
         <>
