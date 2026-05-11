@@ -9,5 +9,11 @@
       "source": "/((?!v1/).*)",
       "destination": "/index.html"
     }
+  ],
+  "crons": [
+    {
+      "path": "/v1/debug/trigger-cron",
+      "schedule": "0 13 * * *"
+    }
   ]
 }

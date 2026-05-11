@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
+
 import { PrismaService } from '../../../shared/infrastructure/prisma.service';
 import { NotificationRepository } from '../infrastructure/notification.repository';
 import { NotificationType } from '@propiedades/types';
@@ -15,7 +15,7 @@ export class CheckExpirationsCron {
     private readonly emailService: ResendEmailService,
   ) {}
 
-  @Cron('15 14 * * *') // PRUEBA: 10:15 hora Chile (UTC-4) = 14:15 UTC — cambiar a '0 13 * * *' después
+  // Se ejecuta vía Vercel Cron Jobs (ver vercel.json)
   async handleCron() {
     this.logger.log('Running daily notification checks...');
     await this.checkContractExpirations();
