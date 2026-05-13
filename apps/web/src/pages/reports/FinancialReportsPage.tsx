@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { FinancialStatementDto, UtilityType, UtilityTypeLabels } from '@propiedades/types';
 import { useOrganization } from '../../providers/OrganizationProvider';
 import { formatDate, toLocalDateFormat } from '../../utils/dateUtils';
+import api from '@/api/axios';
 
 // Componente para una tabla paginada y con búsqueda
 function DataTable<T extends { id: string | number; date: string; amount: number }>({ 
@@ -10,6 +11,7 @@ function DataTable<T extends { id: string | number; date: string; amount: number
   data, 
   columns, 
   renderRow,
+  renderCard,
   totalLabel = "TOTAL",
   footerColor = "var(--primary)"
 }: { 
@@ -17,12 +19,20 @@ function DataTable<T extends { id: string | number; date: string; amount: number
   data: T[]; 
   columns: string[];
   renderRow: (item: T) => React.ReactNode;
+  renderCard?: (item: T) => React.ReactNode;
   totalLabel?: string;
   footerColor?: string;
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const itemsPerPage = 10;
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Filtrado por cualquier campo
   const filteredData = useMemo(() => {
@@ -40,18 +50,18 @@ function DataTable<T extends { id: string | number; date: string; amount: number
 
   return (
     <section className="card" style={{ padding: 0, overflow: 'hidden' }}>
-      <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', background: 'rgba(0,0,0,0.02)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+      <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border)', background: 'rgba(0,0,0,0.02)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
         <h3 style={{ margin: 0, fontSize: '1.125rem' }}>{title}</h3>
-        <div style={{ position: 'relative', width: '100%', maxWidth: '300px' }}>
+        <div style={{ position: 'relative', width: '100%', maxWidth: isMobile ? '100%' : '300px' }}>
           <input 
             type="text" 
             placeholder="Buscar..." 
             value={searchTerm}
             onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
             style={{ 
-              padding: '0.5rem 1rem', 
+              padding: '0.6rem 1.25rem', 
               borderRadius: '2rem', 
-              border: '1px solid var(--border)', 
+              border: '1.5px solid var(--border)', 
               fontSize: '0.875rem', 
               width: '100%',
               background: 'white',
@@ -60,37 +70,46 @@ function DataTable<T extends { id: string | number; date: string; amount: number
           />
         </div>
       </div>
-      <div className="table-responsive">
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)', background: '#fafafa' }}>
-              {columns.map(col => (
-                <th key={col} style={{ padding: '1rem', fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>{col}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {currentItems.length === 0 ? (
-              <tr><td colSpan={columns.length} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No se encontraron registros.</td></tr>
-            ) : currentItems.map(item => renderRow(item))}
-          </tbody>
-          <tfoot style={{ background: 'rgba(0,0,0,0.01)', fontWeight: 700 }}>
-            <tr>
-              <td colSpan={columns.length - 1} style={{ padding: '1rem', textAlign: 'right', fontSize: '0.875rem' }}>
-                {totalLabel} {searchTerm && <span style={{ fontWeight: 400, fontSize: '0.75rem' }}>(Filtrado)</span>}
-              </td>
-              <td style={{ padding: '1rem', textAlign: 'right', fontSize: '1.125rem', color: footerColor }}>
-                ${totalAmount.toLocaleString('es-CL')}
-              </td>
-            </tr>
-          </tfoot>
-        </table>
+
+      {isMobile && renderCard ? (
+        <div className="table-cards-container">
+          {currentItems.length === 0 ? (
+             <div style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🔍</div>
+                No se encontraron registros.
+             </div>
+          ) : currentItems.map(item => renderCard(item))}
+        </div>
+      ) : (
+        <div className="table-responsive">
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)', background: '#fafafa' }}>
+                {columns.map(col => (
+                  <th key={col} style={{ padding: '1rem', fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>{col}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {currentItems.length === 0 ? (
+                <tr><td colSpan={columns.length} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No se encontraron registros.</td></tr>
+              ) : currentItems.map(item => renderRow(item))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div style={{ padding: '1rem 1.25rem', background: 'rgba(0,0,0,0.01)', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-muted)' }}>{totalLabel}</span>
+        <span style={{ fontSize: '1.25rem', fontWeight: 900, color: footerColor }}>
+          ${totalAmount.toLocaleString('es-CL')}
+        </span>
       </div>
       
       {totalPages > 1 && (
-        <div style={{ padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white' }}>
+        <div style={{ padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: 'center', background: 'white', gap: '1rem' }}>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            Mostrando <strong>{Math.min(filteredData.length, (currentPage - 1) * itemsPerPage + 1)}</strong> a <strong>{Math.min(filteredData.length, currentPage * itemsPerPage)}</strong> de <strong>{filteredData.length}</strong> registros
+            Mostrando <strong>{Math.min(filteredData.length, (currentPage - 1) * itemsPerPage + 1)}</strong> a <strong>{Math.min(filteredData.length, currentPage * itemsPerPage)}</strong> de <strong>{filteredData.length}</strong>
           </span>
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <button 
@@ -102,15 +121,16 @@ function DataTable<T extends { id: string | number; date: string; amount: number
               Anterior
             </button>
             <div style={{ display: 'flex', gap: '0.25rem' }}>
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              {Array.from({ length: Math.min(isMobile ? 3 : 5, totalPages) }, (_, i) => {
                 let pageNum = currentPage;
-                if (totalPages > 5) {
+                if (totalPages > (isMobile ? 3 : 5)) {
                     if (currentPage <= 3) pageNum = i + 1;
-                    else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
-                    else pageNum = currentPage - 2 + i;
+                    else if (currentPage >= totalPages - 2) pageNum = totalPages - (isMobile ? 2 : 4) + i;
+                    else pageNum = currentPage - (isMobile ? 1 : 2) + i;
                 } else {
                     pageNum = i + 1;
                 }
+                if (pageNum > totalPages) return null;
                 return (
                   <button
                     key={pageNum}
@@ -137,6 +157,7 @@ function DataTable<T extends { id: string | number; date: string; amount: number
     </section>
   );
 }
+
 
 function WithdrawalModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const [amount, setAmount] = useState('');
@@ -418,9 +439,37 @@ export default function FinancialReportsPage() {
                 <td style={{ padding: '1rem', fontSize: '0.875rem', fontWeight: 700, textAlign: 'right' }}>${item.amount.toLocaleString('es-CL')}</td>
               </tr>
             )}
+            renderCard={(item: any) => (
+              <div key={item.id} className="table-card-item">
+                <div className="table-card-header">
+                  <div className="table-card-main-info">
+                    <div className="table-card-title">{item.propertyAddress}</div>
+                    <div className="table-card-subtitle">{formatDate(item.date)}</div>
+                  </div>
+                  <div className="table-card-amount" style={{ color: 'var(--success)' }}>
+                    ${item.amount.toLocaleString('es-CL')}
+                  </div>
+                </div>
+                <div className="table-card-details">
+                  <div className="table-card-detail-item">
+                    <span className="table-card-label">Inquilino</span>
+                    <span className="table-card-value">{item.tenantName}</span>
+                  </div>
+                  <div className="table-card-detail-item">
+                    <span className="table-card-label">Método</span>
+                    <span className="table-card-value">
+                      <span style={{ padding: '0.1rem 0.4rem', background: 'var(--border-light)', borderRadius: '0.25rem', fontSize: '0.65rem' }}>
+                        {item.method}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           />
 
-          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 350px), 1fr))', gap: '1.5rem' }}>
+          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 500px), 1fr))', gap: '2rem' }}>
+
             <DataTable 
               title="Egresos (Servicios y Retiros)"
               data={data.expenses.items}
@@ -448,7 +497,35 @@ export default function FinancialReportsPage() {
                   </td>
                 </tr>
               )}
+              renderCard={(item: any) => (
+                <div key={item.id} className="table-card-item">
+                  <div className="table-card-header">
+                    <div className="table-card-main-info">
+                      <div className="table-card-title">
+                        {item.type === UtilityType.OTHER ? (item.description || 'Otro') : (UtilityTypeLabels[item.type as UtilityType] || 'Gasto')}
+                      </div>
+                      <div className="table-card-subtitle">{formatDate(item.date)}</div>
+                    </div>
+                    <div className="table-card-amount" style={{ color: 'var(--danger)' }}>
+                      ${item.amount.toLocaleString('es-CL')}
+                    </div>
+                  </div>
+                  <div className="table-card-details">
+                    <div className="table-card-detail-item">
+                      <span className="table-card-label">Propiedad</span>
+                      <span className="table-card-value">{item.propertyAddress?.split(',')[0] || 'General'}</span>
+                    </div>
+                    {item.type !== UtilityType.OTHER && item.description && (
+                      <div className="table-card-detail-item" style={{ gridColumn: 'span 2' }}>
+                        <span className="table-card-label">Descripción</span>
+                        <span className="table-card-value">{item.description}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             />
+
 
             <DataTable 
               title="Costos de Mantenimiento / Inversión"
@@ -474,7 +551,35 @@ export default function FinancialReportsPage() {
                   </td>
                 </tr>
               )}
+              renderCard={(item: any) => (
+                <div key={item.id} className="table-card-item">
+                  <div className="table-card-header">
+                    <div className="table-card-main-info">
+                      <div className="table-card-title">
+                        {item.type === UtilityType.OTHER ? (item.description || 'Gasto Propiedad') : (UtilityTypeLabels[item.type as UtilityType] || 'Costo')}
+                      </div>
+                      <div className="table-card-subtitle">{formatDate(item.date)}</div>
+                    </div>
+                    <div className="table-card-amount">
+                      ${item.amount.toLocaleString('es-CL')}
+                    </div>
+                  </div>
+                  <div className="table-card-details">
+                    <div className="table-card-detail-item">
+                      <span className="table-card-label">Propiedad</span>
+                      <span className="table-card-value">{item.propertyAddress?.split(',')[0] || 'General'}</span>
+                    </div>
+                    {item.type !== UtilityType.OTHER && item.description && (
+                      <div className="table-card-detail-item" style={{ gridColumn: 'span 2' }}>
+                        <span className="table-card-label">Descripción</span>
+                        <span className="table-card-value">{item.description}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             />
+
           </div>
 
           <div className="card" style={{ background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', padding: 'clamp(1rem, 5vw, 3rem)', borderRadius: '1.5rem', border: '1px solid var(--border)' }}>

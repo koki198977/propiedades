@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { PaymentDto, PaymentMethodLabels, OrganizationRole } from '@propiedades/types';
+import { PaymentDto, PaymentMethodLabels } from '@propiedades/types';
 import { useOrganization } from '../../providers/OrganizationProvider';
 import api from '@/api/axios';
 import toast from 'react-hot-toast';

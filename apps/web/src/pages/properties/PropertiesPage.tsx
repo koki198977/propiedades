@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { PropertyDto, PropertyCategoryLabels, PropertyCategory, OrganizationRole } from '@propiedades/types';
+import { PropertyDto, PropertyCategoryLabels, PropertyCategory } from '@propiedades/types';
 import { useOrganization } from '../../providers/OrganizationProvider';
 import api from '@/api/axios';
 import toast from 'react-hot-toast';
@@ -12,7 +12,7 @@ export default function PropertiesPage() {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
 
-  const { activeOrganization, canEdit } = useOrganization();
+  const { canEdit } = useOrganization();
 
   const { data: properties, isLoading, error } = useQuery<PropertyDto[]>({
     queryKey: ['properties'],

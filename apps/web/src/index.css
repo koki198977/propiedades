@@ -409,6 +409,12 @@ h1, h2, h3, h4, .font-heading {
   min-width: 800px;
 }
 
+@media (max-width: 1024px) {
+  .table-responsive table {
+    min-width: 100%;
+  }
+}
+
 @media (max-width: 768px) {
   .table-responsive table {
     min-width: 650px;
@@ -419,6 +425,89 @@ h1, h2, h3, h4, .font-heading {
     font-size: 0.7rem !important;
   }
 }
+
+/* --- Responsive Table Cards --- */
+.table-cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.table-card-item {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.table-card-item:active {
+  transform: scale(0.98);
+}
+
+.table-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.table-card-main-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.table-card-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--secondary);
+}
+
+.table-card-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.table-card-amount {
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: var(--primary);
+}
+
+.table-card-details {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.table-card-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.table-card-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+.table-card-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
 
 .nowrap {
   white-space: nowrap;

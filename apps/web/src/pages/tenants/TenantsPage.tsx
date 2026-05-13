@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams, Link } from 'react-router-dom';
-import { TenantDto, PaginatedResponse, OrganizationRole } from '@propiedades/types';
+import { TenantDto, PaginatedResponse } from '@propiedades/types';
 import api from '@/api/axios';
 import { useOrganization } from '../../providers/OrganizationProvider';
 import { useDebounce } from '../../hooks/useDebounce';

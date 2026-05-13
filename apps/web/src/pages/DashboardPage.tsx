@@ -11,7 +11,6 @@ import {
 import api from '@/api/axios';
 import { Link } from 'react-router-dom';
 
-import { OrganizationRole } from '@propiedades/types';
 import { useOrganization } from '../providers/OrganizationProvider';
 
 export default function DashboardPage() {
