@@ -111,6 +111,7 @@ export class PrismaPropertyRepository implements IPropertyRepository {
           endDate,
           monthlyRent: data.monthlyRent,
           securityDeposit: data.securityDeposit,
+          contractUrl: data.contractUrl,
           isActive: true,
         },
         include: {
@@ -255,6 +256,13 @@ export class PrismaPropertyRepository implements IPropertyRepository {
         isActive: false, 
         endDate: data.endDate ? new Date(data.endDate) : new Date() 
       },
+    });
+  }
+
+  async updateTenancyContract(tenancyId: string, contractUrl: string | null): Promise<void> {
+    await this.prisma.propertyTenant.update({
+      where: { id: tenancyId },
+      data: { contractUrl },
     });
   }
 

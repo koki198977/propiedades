@@ -202,6 +202,7 @@ model PropertyTenant {
   securityDeposit           Decimal?  @db.Decimal(12, 2)
   isSecurityDepositReturned Boolean   @default(false)
   isActive                  Boolean   @default(true)
+  contractUrl               String?
   createdAt                 DateTime  @default(now())
   updatedAt                 DateTime  @updatedAt
   payments                  Payment[]

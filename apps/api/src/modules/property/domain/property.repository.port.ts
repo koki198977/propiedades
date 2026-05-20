@@ -14,6 +14,7 @@ export interface IPropertyRepository {
   updateTenancyTenant(tenancyId: string, tenantId: string): Promise<void>;
   updateTenancyStartDate(tenancyId: string, startDate: Date): Promise<void>;
   terminateTenancy(tenancyId: string, data: any): Promise<void>;
+  updateTenancyContract(tenancyId: string, contractUrl: string | null): Promise<void>;
 }
 
 export const PROPERTY_REPOSITORY = Symbol('IPropertyRepository');

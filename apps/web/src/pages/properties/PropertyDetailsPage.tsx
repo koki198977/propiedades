@@ -252,6 +252,61 @@ export default function PropertyDetailsPage() {
     reorderPhotosMutation.mutate(photoOrders);
   };
 
+  const uploadContractMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      const resp = await api.post(`/properties/${id}/tenancy/${activeTenancy?.id}/contract/upload`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return resp.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['property', id] });
+      toast.success('Contrato subido con éxito');
+    },
+    onError: () => toast.error('Error al subir el contrato'),
+  });
+
+  const deleteContractMutation = useMutation({
+    mutationFn: async () => {
+      await api.delete(`/properties/${id}/tenancy/${activeTenancy?.id}/contract`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['property', id] });
+      toast.success('Contrato eliminado');
+    },
+    onError: () => toast.error('Error al eliminar el contrato'),
+  });
+
+  const handleContractUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      toast.loading('Subiendo contrato...', { id: 'uploading-contract' });
+      try {
+        await uploadContractMutation.mutateAsync(file);
+      } catch (error) {
+        console.error("Error al subir contrato", error);
+      } finally {
+        toast.dismiss('uploading-contract');
+        e.target.value = '';
+      }
+    }
+  };
+
+  const handleDeleteContract = async () => {
+    if (window.confirm('¿Eliminar el documento de contrato permanentemente?')) {
+      toast.loading('Eliminando contrato...', { id: 'deleting-contract' });
+      try {
+        await deleteContractMutation.mutateAsync();
+      } catch (error) {
+        console.error("Error al eliminar contrato", error);
+      } finally {
+        toast.dismiss('deleting-contract');
+      }
+    }
+  };
+
 
   // Only show the hard loading state on initial mount (no data)
   const isInitialLoading = (isLoadingProp && !property) || (isLoadingTenancy && !activeTenancy);
@@ -776,6 +831,71 @@ export default function PropertyDetailsPage() {
                         <div style={{ fontWeight: 800 }}>{(activeTenancy.endDate || property.contractEndDate) ? formatDate(activeTenancy.endDate || property.contractEndDate) : 'Indefinido'}</div>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Documento de Contrato */}
+                  <div className="card" style={{ marginBottom: '1.5rem', background: '#fafafa', border: '1px dashed var(--border)' }}>
+                    <div className="flex justify-between items-center" style={{ marginBottom: '0.5rem' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Contrato de Arriendo</span>
+                      {activeTenancy.contractUrl && <span className="badge badge-success" style={{ fontSize: '0.6rem' }}>ADJUNTADO</span>}
+                    </div>
+                    {activeTenancy.contractUrl ? (
+                      <div className="flex justify-between items-center" style={{ backgroundColor: 'white', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border-light)' }}>
+                        <div className="flex items-center gap-2">
+                          <span style={{ fontSize: '1.25rem' }}>📄</span>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: '0.875rem' }}>Contrato Actual</div>
+                            <a 
+                              href={activeTenancy.contractUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 800, textDecoration: 'underline' }}
+                            >
+                              Ver / Descargar
+                            </a>
+                          </div>
+                        </div>
+                        {canEdit && (
+                          <button 
+                            onClick={handleDeleteContract}
+                            disabled={deleteContractMutation.isPending}
+                            style={{ background: 'none', border: 'none', color: 'var(--danger)', fontSize: '0.65rem', fontWeight: 800, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+                          >
+                            {deleteContractMutation.isPending ? 'Eliminando...' : 'Eliminar'}
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div style={{ textAlign: 'center', padding: '0.5rem 0' }}>
+                        <p className="text-muted" style={{ fontSize: '0.75rem', marginBottom: '0.5rem' }}>No hay un contrato adjunto para este arriendo.</p>
+                        {canEdit && (
+                          <div>
+                            <input
+                              type="file"
+                              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                              style={{ display: 'none' }}
+                              id="contract-file-upload"
+                              onChange={handleContractUpload}
+                              disabled={uploadContractMutation.isPending}
+                            />
+                            <label 
+                              htmlFor="contract-file-upload"
+                              className="btn btn-outline"
+                              style={{ 
+                                display: 'inline-block', 
+                                padding: '0.4rem 1rem', 
+                                fontSize: '0.75rem', 
+                                fontWeight: 700, 
+                                cursor: 'pointer',
+                                textAlign: 'center'
+                              }}
+                            >
+                              {uploadContractMutation.isPending ? 'Subiendo...' : '📎 Adjuntar Contrato (PDF/Word)'}
+                            </label>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {canEdit && (

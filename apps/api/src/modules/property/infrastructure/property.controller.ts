@@ -185,4 +185,28 @@ export class PropertyController {
   async terminateTenancy(@Param('tenancyId') tenancyId: string, @Body() dto: TerminateTenancyDto) {
     return this.propertyRepo.terminateTenancy(tenancyId, dto);
   }
+
+  @Post(':id/tenancy/:tenancyId/contract/upload')
+  @RequireRole(OrganizationRole.ADMIN, OrganizationRole.EDITOR)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Subir el contrato de arriendo' })
+  async uploadContract(@Param('tenancyId') tenancyId: string, @UploadedFile() file: Express.Multer.File) {
+    if (!file) throw new BadRequestException('Archivo no proporcionado');
+    try {
+      const result = await this.cloudinaryService.uploadFile(file);
+      await this.propertyRepo.updateTenancyContract(tenancyId, result.url);
+      return { url: result.url };
+    } catch (error: any) {
+      console.error("Cloudinary Contract Upload Error:", error);
+      throw new BadRequestException(`Error al subir el contrato: ${error.message || 'Verifica tus credenciales de Cloudinary'}`);
+    }
+  }
+
+  @Delete(':id/tenancy/:tenancyId/contract')
+  @RequireRole(OrganizationRole.ADMIN, OrganizationRole.EDITOR)
+  @ApiOperation({ summary: 'Eliminar el contrato de arriendo' })
+  async deleteContract(@Param('tenancyId') tenancyId: string) {
+    await this.propertyRepo.updateTenancyContract(tenancyId, null);
+    return { success: true };
+  }
 }
