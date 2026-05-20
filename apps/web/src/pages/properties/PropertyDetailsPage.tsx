@@ -263,6 +263,7 @@ export default function PropertyDetailsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['property', id] });
+      queryClient.invalidateQueries({ queryKey: ['active-tenancy', id] });
       toast.success('Contrato subido con éxito');
     },
     onError: () => toast.error('Error al subir el contrato'),
@@ -274,6 +275,7 @@ export default function PropertyDetailsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['property', id] });
+      queryClient.invalidateQueries({ queryKey: ['active-tenancy', id] });
       toast.success('Contrato eliminado');
     },
     onError: () => toast.error('Error al eliminar el contrato'),
