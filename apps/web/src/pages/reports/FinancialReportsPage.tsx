@@ -532,6 +532,7 @@ export default function FinancialReportsPage() {
               data={data.costs.items}
               columns={['Fecha', 'Item / Descripción', 'Propiedad', 'Monto']}
               totalLabel="TOTAL COSTOS"
+              footerColor="var(--danger)"
               renderRow={(item: any) => (
                 <tr key={item.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
                   <td style={{ padding: '1rem', fontSize: '0.875rem' }}>{formatDate(item.date)}</td>
@@ -546,7 +547,7 @@ export default function FinancialReportsPage() {
                     )}
                   </td>
                   <td style={{ padding: '1rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>{item.propertyAddress?.split(',')[0] || 'General'}</td>
-                  <td style={{ padding: '1rem', fontSize: '0.875rem', fontWeight: 700, textAlign: 'right' }}>
+                  <td style={{ padding: '1rem', fontSize: '0.875rem', fontWeight: 700, textAlign: 'right', color: 'var(--danger)' }}>
                     ${item.amount.toLocaleString('es-CL')}
                   </td>
                 </tr>
@@ -560,7 +561,7 @@ export default function FinancialReportsPage() {
                       </div>
                       <div className="table-card-subtitle">{formatDate(item.date)}</div>
                     </div>
-                    <div className="table-card-amount">
+                    <div className="table-card-amount" style={{ color: 'var(--danger)' }}>
                       ${item.amount.toLocaleString('es-CL')}
                     </div>
                   </div>
