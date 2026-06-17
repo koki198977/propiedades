@@ -623,6 +623,7 @@ export default function PropertyDetailsPage() {
                         </div>
                         <div className="text-muted" style={{ fontSize: '0.75rem' }}>
                           {util.billingMonth ? formatDate(util.billingMonth, { month: 'long', year: 'numeric' }) : 'Recurrente'}
+                          {util.createdAt && ` • ${formatDate(util.createdAt, { day: '2-digit', month: '2-digit', year: 'numeric' })}`}
                         </div>
                       </div>
                       <div className="flex items-center gap-4">

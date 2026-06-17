@@ -32,13 +32,62 @@ export class ReportController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    const start = startDate ? new Date(startDate) : new Date();
-    const end = endDate ? new Date(endDate) : new Date();
-    
-    // Default to 'today' if no dates provided
-    if (!startDate && !endDate) {
-      start.setHours(0, 0, 0, 0);
-      end.setHours(23, 59, 59, 999);
+    const getChileOffsetMinutes = (date: Date): number => {
+      try {
+        const tzString = new Intl.DateTimeFormat('en-US', {
+          timeZone: 'America/Santiago',
+          year: 'numeric', month: 'numeric', day: 'numeric',
+          hour: 'numeric', minute: 'numeric', second: 'numeric',
+          hour12: false
+        }).format(date);
+        
+        const match = tzString.match(/(\d+)\/(\d+)\/(\d+),\s+(\d+):(\d+):(\d+)/);
+        if (!match) return -240; 
+        
+        const [_, month, day, year, hour, minute, second] = match;
+        const localUtc = Date.UTC(
+          parseInt(year, 10),
+          parseInt(month, 10) - 1,
+          parseInt(day, 10),
+          parseInt(hour, 10),
+          parseInt(minute, 10),
+          parseInt(second, 10)
+        );
+        
+        return (localUtc - date.getTime()) / 60000;
+      } catch (err) {
+        return -240; // Fallback to GMT-4
+      }
+    };
+
+    const parseChileDate = (dateStr: string, isEnd = false): Date => {
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        const utcDate = new Date(dateStr + (isEnd ? 'T23:59:59.999Z' : 'T00:00:00.000Z'));
+        const offsetMin = getChileOffsetMinutes(utcDate);
+        return new Date(utcDate.getTime() - offsetMin * 60000);
+      }
+      return new Date(dateStr);
+    };
+
+    let start: Date;
+    let end: Date;
+
+    if (startDate && endDate) {
+      start = parseChileDate(startDate, false);
+      end = parseChileDate(endDate, true);
+    } else {
+      // Default to today in Chile timezone if dates are missing
+      const now = new Date();
+      const offsetMin = getChileOffsetMinutes(now);
+      const chileLocalTime = new Date(now.getTime() + offsetMin * 60000);
+      
+      const year = chileLocalTime.getUTCFullYear();
+      const month = chileLocalTime.getUTCMonth();
+      const day = chileLocalTime.getUTCDate();
+      
+      start = new Date(Date.UTC(year, month, day, 0, 0, 0, 0) - offsetMin * 60000);
+      end = new Date(Date.UTC(year, month, day, 23, 59, 59, 999) - offsetMin * 60000);
     }
 
     return this.getFinancialStatementUseCase.execute(req.organizationId, start, end);
